@@ -75,14 +75,18 @@ class HOALearner:
                 print(vf_i)
                 print(vf_j)
 
+                cnt = 0
                 for m in vf_i:
                     for n in vf_j:
                         mx, my = parse_field(m)
                         nx, ny = parse_field(n)
                         nei, lt = neigh(mx, my, nx, ny)
                         if nei:
+                            cnt += 1
                             print(m, " -- ", n, " -- ", lt)
 
+                if cnt > 0:
+                    print(cnt, " dependencies found")
 
                 
 
