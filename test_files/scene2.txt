@@ -1,0 +1,14 @@
+scene with two sqares and triangle
+           
+    x      
+   xxx     
+  xxxxx    
+ xxxxxxxx   
+           
+           
+  xx       
+  xx       
+      xxxx 
+      xxxx 
+      xxxx 
+      xxxx 

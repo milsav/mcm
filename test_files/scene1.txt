@@ -1,0 +1,7 @@
+scene with two sqares
+        
+        
+ xx     
+ xx     x
+      xxx
+      xxx
