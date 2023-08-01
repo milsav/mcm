@@ -81,9 +81,24 @@ def print_matrix(mat):
 
 
 """
+function that parses string representation of field coordinates
+"""
+def parse_field(f):
+    l = re.split("-", f)
+    return int(l[0]), int(l[1])
+
+
+"""
 function that checks whether two fields are neighbours
 """
-def neigh(f1_x, f1_y, f2_x, f2_y):
+
+def neigh(f1, f2):
+    f1_x, f1_y = parse_field(f1)
+    f2_x, f2_y = parse_field(f2)
+    return _neigh(f1_x, f1_y, f2_x, f2_y)
+
+
+def _neigh(f1_x, f1_y, f2_x, f2_y):
     if f1_x == f2_x and f1_y == f2_y:
         return True, "ID"
 
@@ -106,9 +121,4 @@ def neigh(f1_x, f1_y, f2_x, f2_y):
         return False, None
     
 
-"""
-function that parses string representation of field coordinates
-"""
-def parse_field(f):
-    l = re.split("-", f)
-    return int(l[0]), int(l[1])
+

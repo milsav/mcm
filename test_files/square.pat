@@ -1,8 +1,11 @@
 square
-xxxxxxxxxxx
-x         x
-x         x
-x         x
-x         x
-x         x
-xxxxxxxxxxx
+xxxxxxxxxx
+x        x
+x        x
+x        x
+x        x
+x        x
+x        x
+x        x
+x        x
+xxxxxxxxxx
