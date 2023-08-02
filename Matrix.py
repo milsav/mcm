@@ -45,10 +45,10 @@ def create_random_matrix(dimx, dimy, p, symbol):
 
 """
 function loads pattern matrix from provided file
-it returns the name of the concept (first line in the file)
+it returns the name of the concept or the scene (first line in the file)
 and the matrix of symbols loaded from file (all other lines)
 """
-def load_pattern_matrix(file):
+def load_matrix(file):
     with open(file) as f:
         lines = [line.rstrip() for line in f]
 

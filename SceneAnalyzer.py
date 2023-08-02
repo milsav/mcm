@@ -8,7 +8,7 @@ Authors: Dusica Knezevic (lucy@dmi.uns.ac.rs), Milos Savic (svc@dmi.uns.ac.rs)
 
 import networkx as nx
 
-from Matrix import dx, dy, link_type
+from Matrix import dx, dy, link_type 
 
 # Moore neighborhood: offsets
 # dx = [-1, -1, -1, 0, 0, 1, 1, 1]
@@ -18,40 +18,12 @@ from Matrix import dx, dy, link_type
 # link_type = ["UL", "U", "UR", "L", "R", "DL", "D", "DR"]
 
 class IdentifyObjects:
-    def __init__(self, file, remove_internal_pix = False):
-        with open(file) as f:
-            lines = [line.rstrip() for line in f]
-
-        self.conceptName = lines[0] #remove if not needed
+    def __init__(self, matrix, remove_internal_pix=False):
+        self.matrix = matrix
+        self.dimx = len(matrix)
+        self.dimy = len(matrix[0])
         self.remove_internal_pix = remove_internal_pix
-        dimx = len(lines) - 1
-        dimy = 0
-        for i in range(1, len(lines)):
-            l = len(lines[i])
-            if l > dimy:
-                dimy = l
-
-        mat = self.__create_empty_matrix(dimx, dimy)
-        
-        for i in range(1, len(lines)):
-            l = lines[i]
-            for j in range(len(l)):
-                c = l[j]
-                if c != ' ':
-                    mat[i - 1][j] = c
-
-        self.dimx = dimx
-        self.dimy = dimy
-        self.matrix = mat
         self.objects = self.__identify_objects()
-
-    def __create_empty_matrix(self, dimx, dimy):
-        mat = []
-        for _ in range(dimx):
-            row = [' '] * dimy
-            mat.append(row)
-
-        return mat
 
 
     # identifies all objects on a scene represented by matrix
@@ -96,6 +68,8 @@ class IdentifyObjects:
 
         return objects
 
+
+    """
     def __node_contained(self, list_objs, node):
         for obj in list_objs:
             if node in obj.nodes:
@@ -105,13 +79,21 @@ class IdentifyObjects:
     # identifies one object from specific point (i,j) on scene
     def __find_object(self, i, j):
         return None
+    """
 
-    def getObjects(self):
+    def get_objects(self):
         return self.objects
     
+    def num_objects(self):
+        return len(self.objects)
+    
 
+if __name__ == "__main__":
+    from Matrix import load_matrix
+    scene, mat = load_matrix("test_files/square_cross.pat")
+    idobj = IdentifyObjects(mat, True)
+    print(idobj.num_objects())
+    objs = idobj.get_objects()
+    for obj in objs:
+        print(obj.nodes)
 
-idobj = IdentifyObjects("test_files/scene2.txt", True)
-objs = idobj.getObjects()
-for obj in objs:
-    print(obj.nodes)

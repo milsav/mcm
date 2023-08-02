@@ -8,7 +8,7 @@
 
 
 import networkx as nx
-from Matrix import dx, dy, link_type, load_pattern_matrix
+from Matrix import dx, dy, link_type, load_matrix
 
 
 """
@@ -498,7 +498,7 @@ class FSMPatRecKernel:
 
 
 def learn_simple_concept(pattern_matrix_file, verbose=False):
-    concept, mat = load_pattern_matrix(pattern_matrix_file)
+    concept, mat = load_matrix(pattern_matrix_file)
     fsms = []
 
     pg = PatternGraph(mat)

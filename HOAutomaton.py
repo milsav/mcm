@@ -14,6 +14,7 @@ import networkx as nx
 from AutomataMemory import base_automata_memory
 from Automaton import FSMPatRecKernel
 from Matrix import neigh
+from SceneAnalyzer import IdentifyObjects
 
 
 """
@@ -82,6 +83,10 @@ Class for learning HOA graphs
 """
 class HOALearner:
     def __init__(self, concept, matrix, verbose=False):
+        idobj = IdentifyObjects(matrix)
+        if idobj.num_objects() != 1:
+            raise Exception("[ERROR, HOALearner] matrix contains multiple objects")
+
         self.concept = concept
         self.matrix = matrix
         self.dim_x = len(matrix)
@@ -147,17 +152,32 @@ class HOALearner:
                 vf_j = self.activated_automata[j][2]
 
                 i_start, i_end = vf_i[0], vf_i[-1]
-                j_start = vf_j[0]
+                j_start, j_end = vf_j[0], vf_j[-1]
 
                 if i_start == j_start:
-                    self.hoa.add_link(i, j, "ID")
-                    break
+                    # automata i and j have identical starting positions
+                    self.hoa.add_link(i, j, "START")
                 else:
+                    # automaton j starts after automata i 
                     nei, move = neigh(j_start, i_end)
                     if nei:
                         self.hoa.add_link(i, j, move)
-                        break
+                    else:
+                        # incident automata
+                        if i_end == j_end:
+                            self.hoa.add_link(i, j, "END")
+                        else: 
+                            for m in vf_i:
+                                for n in vf_j:
+                                    nei, move = neigh(n, m)
+                                    if nei:
+                                        if move == "ID":
+                                            self.hoa.add_link(i, j, "INC")
+                                            print(m, n)
+                                        else:
+                                            self.hoa.add_link(i, j, "INC_" + move)
 
+                    
     def learn(self):
         self.identify_automata()
         self.infere_automata_dependencies()
@@ -165,10 +185,10 @@ class HOALearner:
 
 
 if __name__ == "__main__":
-    from Automaton import load_pattern_matrix
-    concept, matrix = load_pattern_matrix('test_files/square.pat')
+    from Automaton import load_matrix
+    concept, matrix = load_matrix('test_files/square_cross.pat')
 
-    hoal = HOALearner(concept, matrix, verbose=False)
+    hoal = HOALearner(concept, matrix, verbose=True)
     hoa = hoal.learn()
     hoa.print()
     

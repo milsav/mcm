@@ -1,12 +1,11 @@
 square_cross
-xxxxxxxxxxxxxx
-x     x      x
-x     x      x
-x     x      x
-x     x      x
-xxxxxxxxxxxxxx
-x     x      x
-x     x      x
-x     x      x
-x     x      x
-xxxxxxxxxxxxxx
+xxxxxxxxxx
+x   x    x
+x   x    x
+x   x    x
+xxxxxxxxxx
+x   x    x
+x   x    x
+x   x    x
+x   x    x
+xxxxxxxxxx
