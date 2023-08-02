@@ -166,6 +166,7 @@ class HOALearner:
                         # incident automata
                         if i_end == j_end:
                             self.hoa.add_link(i, j, "END")
+                            print("END", i, j)
                         else: 
                             for m in vf_i:
                                 for n in vf_j:
@@ -173,9 +174,10 @@ class HOALearner:
                                     if nei:
                                         if move == "ID":
                                             self.hoa.add_link(i, j, "INC")
-                                            print(m, n)
+                                            print("1 == ", m, n, " | ", i, j, "INC")
                                         else:
                                             self.hoa.add_link(i, j, "INC_" + move)
+                                            print("2 == ", m, n,  " | ", i, j, " | ", "INC_" + move)
 
                     
     def learn(self):
