@@ -85,6 +85,11 @@ class HOA:
             src, dst = l
             print(src.get_id(), "-->", dst.get_id(), "move = ", self.G.edges[l]["link_type"])
 
+        print("-- activation time constraints")
+        for x in self.identical_at:
+            print(x[0], x[1], " identical activation time")
+        for x in self.semi_identical_at:
+            print(x[0], x[1], " semiidentical activation time")
     
     def connected(self):
         return nx.is_connected(self.G.to_undirected())
@@ -96,6 +101,32 @@ class HOA:
     
     def get_nodes(self):
         return self.nodes
+    
+
+    def process_activation_times(self):
+        self.identical_at = []
+        self.semi_identical_at = []
+
+        for j in range(1, self.num_nodes):
+            for i in range(j):
+                at_i = self.nodes[i].get_activation_time()
+                at_j = self.nodes[j].get_activation_time()
+
+                if at_i == at_j:
+                    self.identical_at.append((i, j))
+                elif at_i - at_j == 1:
+                    self.semi_identical_at.append((i, j))
+                elif at_j - at_i == 1:
+                    self.semi_identical_at.append((j, i))
+
+
+    def get_identical_at(self):
+        return self.identical_at
+    
+
+    def get_semi_identical_at(self):
+        return self.semi_identical_at
+                
 
 
 
@@ -167,6 +198,9 @@ class HOALearner:
             concept, automaton, automaton_type, activation_time = a[0], a[1], a[2], a[4]
             self.hoa.add_node(concept, automaton, automaton_type, activation_time)
 
+        # derive activation time constraints
+        self.hoa.process_activation_times()
+
     
     def infere_automata_dependencies(self):
         for j in range(1, len(self.activated_automata)):
@@ -237,7 +271,7 @@ class HOAPatRecKernel:
         self.y = y
         self.dimx = len(input_matrix)
         self.dimy = len(input_matrix[0])
-        self.activation_time = []
+        self.activation_time = [0] * hoa.num_nodes
         self.visited_fields = [None] * hoa.num_nodes
 
 
@@ -257,19 +291,18 @@ class HOAPatRecKernel:
     def apply(self):
         # apply the first automaton
         start_node = self.hoa.nodes[0]
-        start_node_at = start_node.get_activation_time()
         rec, t, visited = self.apply_automaton(start_node, self.x, self.y)
 
         if rec:
             # print("First automaton succesfully activated", self.x, self.y)
-            self.activation_time.append(t)
+            self.activation_time[0] = t
             self.visited_fields[0] = visited
 
             # rescale activation times
-            diff = t - start_node_at
-            for i in range(1, len(self.hoa.nodes)):
-                at = self.hoa.nodes[i].get_activation_time() + diff
-                self.activation_time.append(at)
+            # diff = t - start_node_at
+            # for i in range(1, len(self.hoa.nodes)):
+            #    at = self.hoa.nodes[i].get_activation_time() + diff
+            #    self.activation_time.append(at)
 
             # print("Rescaled activation times: ", self.activation_time)
 
@@ -309,7 +342,7 @@ class HOAPatRecKernel:
             link_type = graph.edges[start_node, s]["link_type"]
             queue.append((s, 0, link_type))
 
-        constraints_to_check = []
+        link_constraints_to_check = []
 
         while len(queue) > 0:
             curr, prev_id, link_type = queue.popleft()
@@ -323,11 +356,14 @@ class HOAPatRecKernel:
                 if not rec:
                     # print("Pattern not recognized")
                     return False
-                elif t != self.activation_time[curr_id]:
-                    # print("Pattern recognized but with inappropriate activation time")
-                    return False
+                #elif t != self.activation_time[curr_id]:
+                #    # print("Pattern recognized but with inappropriate activation time")
+                #    return False
                 else:
                     self.visited_fields[curr_id] = visited_fields
+                    self.activation_time[curr_id] = t
+
+                    # add successor HOA nodes to the queue
                     succs = graph.successors(curr)
                     for s in succs:
                         s_id = s.get_id()
@@ -336,16 +372,21 @@ class HOAPatRecKernel:
                             visited_nodes[s_id] = True
                             queue.append((s, curr_id, link_type))
                         else:
-                            constraints_to_check.append((curr_id, s_id, link_type))
+                            link_constraints_to_check.append((curr_id, s_id, link_type))
             else:
                 return False
 
-        # print("Checking constraints")
-        for cc in constraints_to_check:
-            if not self.check_constraint(cc[0], cc[1], cc[2]):
-                # print("Constraint failed: ", cc[0], cc[1], cc[2])
-                return False
+        # print("Checking activation time constraints")
+        ok = self.check_activation_time_constraints()
+        if not ok:
+            return False
 
+        # print("Checking link constraints")
+        for cc in link_constraints_to_check:
+            if not self.check_link_constraint(cc[0], cc[1], cc[2]):
+                print("Link constraint failed: ", cc[0], cc[1], cc[2])
+                return False
+            
         return True
 
 
@@ -368,7 +409,7 @@ class HOAPatRecKernel:
         return x >= 0 and x < self.dimx and y >= 0 and y < self.dimy
 
 
-    def check_constraint(self, auto_i, auto_j, constraint):
+    def check_link_constraint(self, auto_i, auto_j, constraint):
         if constraint == "END":
             vf_i = self.visited_fields[auto_i]
             vf_j = self.visited_fields[auto_j]
@@ -391,13 +432,33 @@ class HOAPatRecKernel:
             return False 
 
 
+    def check_activation_time_constraints(self):
+        idat = self.hoa.get_identical_at()
+        for k in idat:
+            auto_1, auto_2 = k[0], k[1]
+            at_1, at_2 = self.activation_time[auto_1], self.activation_time[auto_2]
+            if at_1 != at_2:
+                # print("AT id constraint failed", auto_1, auto_2, at_1, at_2) 
+                return False 
+
+        sidat = self.hoa.get_semi_identical_at()
+        for k in sidat:
+            auto_1, auto_2 = k[0], k[1]
+            at_1, at_2 = self.activation_time[auto_1], self.activation_time[auto_2]
+            if at_1 - at_2 != 1:
+                # print("AT sid constraint failed", auto_1, auto_2, at_1, at_2)
+                return False
+
+        return True
+
+
 if __name__ == "__main__":
     from Matrix import load_matrix, print_matrix
     from SceneAnalyzer import IdentifyObjects
 
     concept, matrix = load_matrix('test_files/square.pat')
 
-    hoal = HOALearner(concept, matrix, verbose=False)
+    hoal = HOALearner(concept, matrix, verbose=True)
     hoa = hoal.learn()
     hoa.print()
 
