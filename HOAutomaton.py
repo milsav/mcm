@@ -165,19 +165,31 @@ class HOALearner:
                     else:
                         # incident automata
                         if i_end == j_end:
+                            # both automata ends at same position
                             self.hoa.add_link(i, j, "END")
-                            print("END", i, j)
-                        else: 
+                        else:
+                            # other incidences
+                            incidences = [] 
                             for m in vf_i:
                                 for n in vf_j:
                                     nei, move = neigh(n, m)
                                     if nei:
                                         if move == "ID":
-                                            self.hoa.add_link(i, j, "INC")
-                                            print("1 == ", m, n, " | ", i, j, "INC")
+                                            # self.hoa.add_link(i, j, "INC")
+                                            incidences.append("INC")
                                         else:
-                                            self.hoa.add_link(i, j, "INC_" + move)
-                                            print("2 == ", m, n,  " | ", i, j, " | ", "INC_" + move)
+                                            #self.hoa.add_link(i, j, "INC_" + move)
+                                            incidences.append("INC_" + move)
+
+                            if self.verbose:
+                                if len(incidences) == 0:
+                                    print("Automata", i, j, " are independent")
+                                else:
+                                    print("Automata ", i, j, " incidences: ", incidences)
+
+                            if len(incidences) > 0:
+                                selinc = min(incidences, key=len)
+                                self.hoa.add_link(i, j, selinc)
 
                     
     def learn(self):
@@ -190,7 +202,7 @@ if __name__ == "__main__":
     from Automaton import load_matrix
     concept, matrix = load_matrix('test_files/square_cross.pat')
 
-    hoal = HOALearner(concept, matrix, verbose=True)
+    hoal = HOALearner(concept, matrix, verbose=False)
     hoa = hoal.learn()
     hoa.print()
     
