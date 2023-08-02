@@ -23,10 +23,11 @@ Higher-order automaton: graph encompassing simple and/or higher order automata
 """
 
 class HOANode:
-    def __init__(self, node_id, concept, automaton, activation_time):
+    def __init__(self, node_id, concept, automaton, automaton_type, activation_time):
         self.node_id = node_id
         self.concept = concept
         self.automaton = automaton
+        self.automaton_type = automaton_type
         self.activation_time = activation_time
 
     def get_concept(self):
@@ -34,6 +35,9 @@ class HOANode:
     
     def get_automaton(self):
         return self.automaton
+    
+    def get_automaton_type(self):
+        return self.automaton_type
     
     def get_activation_time(self):
         return self.activation_time
@@ -55,15 +59,18 @@ class HOA:
         self.num_nodes = 0
         self.nodes = []
     
-    def add_node(self, concept, automaton, activation_time):
+    
+    def add_node(self, concept, automaton, automaton_type, activation_time):
         node_id = self.num_nodes
         self.num_nodes += 1 
-        n = HOANode(node_id, concept, automaton, activation_time)
+        n = HOANode(node_id, concept, automaton, automaton_type, activation_time)
         self.nodes.append(n)
         self.G.add_node(n)
         
+    
     def add_link(self, src_index, dst_index, link_type):
         self.G.add_edge(self.nodes[src_index], self.nodes[dst_index], link_type=link_type)
+    
     
     def print(self):
         print("HOA graph for ", self.concept)
@@ -77,6 +84,19 @@ class HOA:
             print(src.get_id(), "-->", dst.get_id(), "move = ", self.G.edges[l]["link_type"])
 
     
+    def connected(self):
+        return nx.is_connected(self.G.to_undirected())
+    
+
+    def num_nodes(self):
+        return self.num_nodes
+    
+    
+    def get_nodes(self):
+        return self.nodes
+
+
+
 
 """
 Class for learning HOA graphs
@@ -127,7 +147,7 @@ class HOALearner:
                                     for v in visited:
                                         visited_fields.add(v)
 
-                                    self.activated_automata.append([concept, automaton, visited, t])
+                                    self.activated_automata.append([concept, automaton, "FSM", visited, t])
                                     break      
 
         if self.verbose:
@@ -137,19 +157,20 @@ class HOALearner:
                 a[1].print()
                 print(a[2])
                 print(a[3])
+                print(a[4])
                 print("\n")
 
         # create nodes in HOA graph
         for a in self.activated_automata:
-            concept, automaton, activation_time = a[0], a[1], a[3]
-            self.hoa.add_node(concept, automaton, activation_time)
+            concept, automaton, automaton_type, activation_time = a[0], a[1], a[2], a[4]
+            self.hoa.add_node(concept, automaton, automaton_type, activation_time)
 
     
     def infere_automata_dependencies(self):
         for j in range(1, len(self.activated_automata)):
             for i in range(j):
-                vf_i = self.activated_automata[i][2]
-                vf_j = self.activated_automata[j][2]
+                vf_i = self.activated_automata[i][3]
+                vf_j = self.activated_automata[j][3]
 
                 i_start, i_end = vf_i[0], vf_i[-1]
                 j_start, j_end = vf_j[0], vf_j[-1]
@@ -190,21 +211,94 @@ class HOALearner:
                             if len(incidences) > 0:
                                 selinc = min(incidences, key=len)
                                 self.hoa.add_link(i, j, selinc)
+        
+        # check HOA connectedness
+        if not self.hoa.connected():
+            print("[infere_automata_dependencies, warning] HOA graph not connected")
+            return
 
-                    
+
     def learn(self):
         self.identify_automata()
         self.infere_automata_dependencies()
         return self.hoa
 
 
+"""
+Pattern recognition based on HOA graphs
+"""
+class HOAPatRecKernel:
+    def __init__(self, hoa, input_matrix, x, y):
+        self.hoa = hoa
+        self.input_matrix = input_matrix
+        self.x = x
+        self.y = y
+        self.dimx = len(input_matrix)
+        self.dimy = len(input_matrix[0])
+        self.activation_time = []
+        self.visited_fields = []
+
+
+    def apply(self):
+        # apply the first automaton
+        start_node = self.hoa.nodes[0]
+        start_node_automaton = start_node.get_automaton()
+        start_node_at = start_node.get_activation_time()
+        auto_type = start_node.get_automaton_type()
+        prk = None
+        if auto_type == "FSM":
+            prk = FSMPatRecKernel(start_node_automaton, self.input_matrix, self.x, self.y)
+        else:
+            prk = HOAPatRecKernel(start_node_automaton, self.input_matrix, self.x, self.y)
+        
+        rec, t, visited = prk.apply()
+
+        if rec:
+            print("FIRST AUTOMATON SUCCESFULLY ACTIVATED", self.x, self.y)
+            self.activation_time.append(t)
+            self.visited_fields.append(visited)
+
+            # rescale activation times
+            diff = t - start_node_at
+            for i in range(1, len(self.hoa.nodes)):
+                at = self.hoa.nodes[i].get_activation_time() + diff
+                self.activation_time.append(at)
+
+            print("Rescaled activation times: ", self.activation_time)
+
+
+        return False, 0, None
+
+
+
 if __name__ == "__main__":
-    from Automaton import load_matrix
-    concept, matrix = load_matrix('test_files/square_cross.pat')
+    from Matrix import load_matrix, print_matrix
+    from SceneAnalyzer import IdentifyObjects
+
+    concept, matrix = load_matrix('test_files/square.pat')
 
     hoal = HOALearner(concept, matrix, verbose=False)
     hoa = hoal.learn()
     hoa.print()
+
+    scene_desc, scene_matrix = load_matrix('test_files/scene1.txt')
+    print(scene_desc, " LOADED")
+    print_matrix(scene_matrix)
+
+    idobj = IdentifyObjects(scene_matrix)
+    num_objects = idobj.num_objects()
+    for i in range(num_objects):
+        mat = idobj.get_object_matrix(i)
+        print("\nStarting pattern recognition for: ")
+        print_matrix(mat)
+
+        prk = HOAPatRecKernel(hoa, mat, 0, 0)
+        rec, t, visited = prk.apply()
+        if rec:
+            print("pattern recognized, activation time", t, " visited cells", visited)
+
+
+
     
 
 

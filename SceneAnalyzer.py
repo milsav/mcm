@@ -1,14 +1,14 @@
 '''
 Metacognitive machines 
 
-SceneAnalyzer: Identification of objects in given scene
+SceneAnalyzer: Identification of objects in a given scene
 
 Authors: Dusica Knezevic (lucy@dmi.uns.ac.rs), Milos Savic (svc@dmi.uns.ac.rs)
 '''
 
 import networkx as nx
 
-from Matrix import dx, dy, link_type 
+from Matrix import dx, dy, link_type, parse_field, create_empty_matrix
 
 # Moore neighborhood: offsets
 # dx = [-1, -1, -1, 0, 0, 1, 1, 1]
@@ -84,16 +84,54 @@ class IdentifyObjects:
     def get_objects(self):
         return self.objects
     
+
     def num_objects(self):
         return len(self.objects)
     
 
+    def get_object_matrix(self, index):
+        if index >= self.num_objects():
+            raise Exception("[ERROR, get_object_matrix] invalid index")
+        
+        obj = self.objects[index].nodes
+        no_pixels = len(obj)
+        x_arr, y_arr = [], []
+        for pixel in obj:
+            x, y = parse_field(pixel)
+            x_arr.append(x)
+            y_arr.append(y)
+
+        min_x, min_y = min(x_arr), min(y_arr)
+
+        for i in range(no_pixels):
+            x_arr[i] -= min_x
+            y_arr[i] -= min_y
+
+        dim_x, dim_y = max(x_arr) + 1, max(y_arr) + 1
+        mat = create_empty_matrix(dim_x, dim_y)
+        for i in range(no_pixels):
+            x, y = x_arr[i], y_arr[i]
+            org_x, org_y = x + min_x, y + min_y
+            val = self.matrix[org_x][org_y]
+            mat[x][y] = val
+        
+        return mat
+    
+
 if __name__ == "__main__":
-    from Matrix import load_matrix
-    scene, mat = load_matrix("test_files/square_cross.pat")
+    from Matrix import load_matrix, print_matrix
+    scene, mat = load_matrix("test_files/scene1.txt")
     idobj = IdentifyObjects(mat, True)
-    print(idobj.num_objects())
+    no = idobj.num_objects()
+    print("#num_objects", no)
     objs = idobj.get_objects()
-    for obj in objs:
+    
+    for i in range(no):
+        obj = objs[i]
         print(obj.nodes)
+
+        mat = idobj.get_object_matrix(i)
+        print_matrix(mat)
+
+
 

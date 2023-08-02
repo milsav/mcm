@@ -1,7 +1,20 @@
-scene with two sqares
+scene with three squares
         
         
- xx     
- xx     x
-      xxx
-      xxx
+    xxxxx       x
+    x   x       x
+    x   x       x
+    x   x
+    xxxxx          xxxxxx
+
+         xx   
+         xx
+                   xxx
+                   x x
+                   xxx
+
+    xxxxx
+    x   
+    x   x
+    x   x
+    xxxxx   
