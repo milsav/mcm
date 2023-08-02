@@ -7,8 +7,6 @@ scene with three squares
     x   x
     xxxxx          xxxxxx
 
-         xx   
-         xx
                    xxx
                    x x
                    xxx
@@ -18,3 +16,15 @@ scene with three squares
     x   x
     x   x
     xxxxx   
+
+
+                   xxx
+                   x x
+                   x x
+                   xxx
+
+    xxxxx
+    x   x
+    x   x
+    x   x
+    xxxxxxx

@@ -10,10 +10,12 @@
 # Authors: {svc, lucy}@dmi.uns.ac.rs
 
 import networkx as nx
+from collections import deque
 
 from AutomataMemory import base_automata_memory
 from Automaton import FSMPatRecKernel
-from Matrix import neigh
+from Matrix import neigh, parse_field, dx, dy
+from Matrix import link_type as LT_ARRAY
 from SceneAnalyzer import IdentifyObjects
 
 
@@ -236,27 +238,32 @@ class HOAPatRecKernel:
         self.dimx = len(input_matrix)
         self.dimy = len(input_matrix[0])
         self.activation_time = []
-        self.visited_fields = []
+        self.visited_fields = [None] * hoa.num_nodes
+
+
+    def apply_automaton(self, hoa_node, x, y):
+        autom = hoa_node.get_automaton()
+        auto_type = hoa_node.get_automaton_type()
+        prk = None
+        if auto_type == "FSM":
+            prk = FSMPatRecKernel(autom, self.input_matrix, x, y)
+        else:
+            prk = HOAPatRecKernel(autom, self.input_matrix, x, y)   
+
+        rec, t, visited = prk.apply()
+        return rec, t, visited 
 
 
     def apply(self):
         # apply the first automaton
         start_node = self.hoa.nodes[0]
-        start_node_automaton = start_node.get_automaton()
         start_node_at = start_node.get_activation_time()
-        auto_type = start_node.get_automaton_type()
-        prk = None
-        if auto_type == "FSM":
-            prk = FSMPatRecKernel(start_node_automaton, self.input_matrix, self.x, self.y)
-        else:
-            prk = HOAPatRecKernel(start_node_automaton, self.input_matrix, self.x, self.y)
-        
-        rec, t, visited = prk.apply()
+        rec, t, visited = self.apply_automaton(start_node, self.x, self.y)
 
         if rec:
-            print("FIRST AUTOMATON SUCCESFULLY ACTIVATED", self.x, self.y)
+            # print("First automaton succesfully activated", self.x, self.y)
             self.activation_time.append(t)
-            self.visited_fields.append(visited)
+            self.visited_fields[0] = visited
 
             # rescale activation times
             diff = t - start_node_at
@@ -264,11 +271,124 @@ class HOAPatRecKernel:
                 at = self.hoa.nodes[i].get_activation_time() + diff
                 self.activation_time.append(at)
 
-            print("Rescaled activation times: ", self.activation_time)
+            # print("Rescaled activation times: ", self.activation_time)
+
+            bfs_succesfull = self.bfs()
+            if bfs_succesfull:
+                v = []
+                for i in range(hoa.num_nodes):
+                    vf = self.visited_fields[i]
+                    if vf == None:
+                        print("[Warning] Pattern rezognized with an empty visited_fields[i]")
+                    else:
+                        v += self.visited_fields[i]
+                return True, len(v), v 
+            else:
+                return False, 0, None
+        else:
+            return False, 0, None
+        
+
+    def bfs(self):
+        graph = self.hoa.G
+
+        # start node
+        start_node = self.hoa.nodes[0]
+
+        # initialize vector of visited nodes
+        num_nodes = self.hoa.num_nodes
+        visited_nodes = [False] * num_nodes
+        visited_nodes[0] = True
+
+        # initialize bfs queue
+        queue = deque()
+        succs = graph.successors(start_node)
+        for s in succs:
+            s_id = s.get_id()
+            visited_nodes[s_id] = True
+            link_type = graph.edges[start_node, s]["link_type"]
+            queue.append((s, 0, link_type))
+
+        constraints_to_check = []
+
+        while len(queue) > 0:
+            curr, prev_id, link_type = queue.popleft()
+            curr_id = curr.get_id()
+            prev_visited_fields = self.visited_fields[prev_id]
+            
+            x, y = self.determine_starting_position(prev_visited_fields, link_type)
+            # print("Applying automaton", curr_id, " at", x, y)
+            if self.on_table(x, y):
+                rec, t, visited_fields = self.apply_automaton(curr, x, y)
+                if not rec:
+                    # print("Pattern not recognized")
+                    return False
+                elif t != self.activation_time[curr_id]:
+                    # print("Pattern recognized but with inappropriate activation time")
+                    return False
+                else:
+                    self.visited_fields[curr_id] = visited_fields
+                    succs = graph.successors(curr)
+                    for s in succs:
+                        s_id = s.get_id()
+                        link_type = graph.edges[curr, s]["link_type"]
+                        if not visited_nodes[s_id]:
+                            visited_nodes[s_id] = True
+                            queue.append((s, curr_id, link_type))
+                        else:
+                            constraints_to_check.append((curr_id, s_id, link_type))
+            else:
+                return False
+
+        # print("Checking constraints")
+        for cc in constraints_to_check:
+            if not self.check_constraint(cc[0], cc[1], cc[2]):
+                # print("Constraint failed: ", cc[0], cc[1], cc[2])
+                return False
+
+        return True
 
 
-        return False, 0, None
+    def determine_starting_position(self, prev_visited_fields, link_type):
+        if link_type == "START":
+            x, y = parse_field(prev_visited_fields[0])
+            return x, y
+        elif link_type in LT_ARRAY:
+            x, y = parse_field(prev_visited_fields[-1])
+            ind = LT_ARRAY.index(link_type)
+            x += dx[ind]
+            y += dy[ind]
+            return x, y
+        else:
+            print("[ERROR, determine_starting_position] to fix")
+            return -1, -1
 
+
+    def on_table(self, x, y):
+        return x >= 0 and x < self.dimx and y >= 0 and y < self.dimy
+
+
+    def check_constraint(self, auto_i, auto_j, constraint):
+        if constraint == "END":
+            vf_i = self.visited_fields[auto_i]
+            vf_j = self.visited_fields[auto_j]
+            return vf_i[-1] == vf_j[-1]
+        elif constraint == "INC":
+            vf_i = self.visited_fields[auto_i]
+            vf_j = self.visited_fields[auto_j]
+
+            for f in vf_i:
+                if f in vf_j:
+                    return True
+                
+            for f in vf_j:
+                if f in vf_i:
+                    return True
+
+            return False
+        else:
+            print("[ERROR, check_constraint] to fix")
+            return False 
 
 
 if __name__ == "__main__":
