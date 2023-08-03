@@ -434,10 +434,9 @@ class FSMPatRecKernel:
             num_feasible_trans = len(feasible_trans)
 
             if num_feasible_trans == 0:
-                if num_trans == 1 and empty_present:
-                    return True
-                elif selfloop_present and empty_present:
-                    return True
+                if empty_present:
+                    if num_trans == 1 or (num_trans == 2 and selfloop_present):
+                        return True
                 else:
                     return self.pattern_recognized()
             else:
