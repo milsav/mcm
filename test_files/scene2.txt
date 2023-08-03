@@ -1,14 +1,36 @@
-scene with two sqares and triangle
-           
-    x      
-   xxx     
-  xxxxx    
- xxxxxxxx   
-           
-           
-  xx       
-  xx       
-      xxxx 
-      xxxx 
-      xxxx 
-      xxxx 
+T scene
+
+    xxxx        x 
+                x
+  xxxxxxx       x
+     x          x
+     x
+     x
+     x
+
+  xxxxx
+      x
+      x
+      x
+
+  xxxxx
+    x
+    x
+    x
+
+
+      xxxxx
+      x
+      x
+      x
+
+
+  xxxxxxxxxxxxxxxxxxxxxx   
+           x
+           x
+           x
+           x
+           x
+           x
+           x
+

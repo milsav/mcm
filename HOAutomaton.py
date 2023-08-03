@@ -12,7 +12,6 @@
 import networkx as nx
 from collections import deque
 
-from AutomataMemory import base_automata_memory
 from Automaton import FSMPatRecKernel
 from Matrix import neigh, parse_field, dx, dy
 from Matrix import link_type as LT_ARRAY
@@ -52,6 +51,7 @@ class HOANode:
     
     def print(self):
         print(str(self.node_id) + "-" + self.concept + "-" + str(self.activation_time))
+
 
 
 class HOA:
@@ -135,7 +135,7 @@ class HOA:
 Class for learning HOA graphs
 """
 class HOALearner:
-    def __init__(self, concept, matrix, verbose=False):
+    def __init__(self, concept, matrix, automata_memory, verbose=False):
         idobj = IdentifyObjects(matrix)
         if idobj.num_objects() != 1:
             raise Exception("[ERROR, HOALearner] matrix contains multiple objects")
@@ -147,6 +147,9 @@ class HOALearner:
         self.verbose = verbose
         self.hoa = HOA(concept)
 
+        self.automata_memory = automata_memory
+
+
     #
     # identify automata that can be activated in pattern matrix
     # 
@@ -157,7 +160,7 @@ class HOALearner:
         # list of activated automata
         self.activated_automata = []
 
-        base_concepts = base_automata_memory.get_concepts()
+        base_concepts = self.automata_memory.get_base_concepts()
 
         for i in range(self.dim_x):
             for j in range(self.dim_y):
@@ -165,7 +168,7 @@ class HOALearner:
                 if self.matrix[i][j] != ' ' and start_field not in visited_fields:
                     # identify base concepts
                     for concept in base_concepts:
-                        for automaton in base_automata_memory.get_automata(concept): 
+                        for automaton in self.automata_memory.get_automata(concept): 
                             prk = FSMPatRecKernel(automaton, self.matrix, i, j)
                             rec, t, visited = prk.apply()
                             if rec:
@@ -455,10 +458,21 @@ class HOAPatRecKernel:
 if __name__ == "__main__":
     from Matrix import load_matrix, print_matrix
     from SceneAnalyzer import IdentifyObjects
+    from AutomataMemory import AutomataMemory
+    from Automaton import learn_simple_concept
+
+    automata_memory = AutomataMemory()
+
+    ok, concept, _, _, fsms = learn_simple_concept('test_files/vertical_line.pat', verbose=False)
+    if ok:
+        automata_memory.add_automata_to_memory(concept, True, fsms)
+
+    ok, concept, _, _, fsms = learn_simple_concept('test_files/horizontal_line.pat', verbose=False)
+    if ok:
+        automata_memory.add_automata_to_memory(concept, True, fsms)
 
     concept, matrix = load_matrix('test_files/square.pat')
-
-    hoal = HOALearner(concept, matrix, verbose=True)
+    hoal = HOALearner(concept, matrix, automata_memory, verbose=True)
     hoa = hoal.learn()
     hoa.print()
 

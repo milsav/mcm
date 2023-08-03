@@ -50,15 +50,15 @@ class PatternGraph:
 
         self.connected = nx.is_connected(self.G.to_undirected())
         if not self.connected:
-            print("[PatternGraph, error] Pattern not connected")
+            # print("[PatternGraph, error] Pattern not connected")
+            self.simple_concept = False
             return
         
         self.start_nodes = self.determine_start_nodes()
         if len(self.start_nodes) == 0:
             # print("[PatternGraph, warning] Pattern does not have clear starting nodes")
             self.simple_concept = False
-            self.start_nodes = [first_node]
-        
+            
         #print("START-NODES = ", self.start_nodes)
 
 
@@ -436,11 +436,12 @@ class FSMPatRecKernel:
             if num_feasible_trans == 0:
                 if num_trans == 1 and empty_present:
                     return True
+                elif selfloop_present and empty_present:
+                    return True
                 else:
                     return self.pattern_recognized()
             else:
                 # print("State: ", state.name, num_trans, num_feasible_trans, empty_present, selfloop_present, " coords: ", x, y)
-
                 if not selfloop_present:
                     diff = 1 if empty_present else 0
                     if num_feasible_trans + diff != num_trans:
@@ -487,10 +488,10 @@ class FSMPatRecKernel:
 
             if fsm_symbol != EMPTY_FSM_SYMBOL:
                 next_x, next_y = self.next_x_y(x, y, move)
+                if next_state == state:
+                    selfloop_present = True
                 if self.on_table(next_x, next_y) and self.input_matrix[next_x][next_y] == next_symbol:
                     feasible_trans.append((next_x, next_y, next_state))
-                    if next_state == state:
-                        selfloop_present = True
             else:
                 empty_present = True
 
@@ -521,10 +522,48 @@ def learn_simple_concept(pattern_matrix_file, verbose=False):
 
     return True, concept, mat, pg, fsms
 
+if __name__ == "__main__":
+    from Matrix import load_matrix, print_matrix
+    from SceneAnalyzer import IdentifyObjects
+
+    ok, concept, _, _, fsms = learn_simple_concept('test_files/horizontal_line.pat', verbose=False)
+    hl_fsm = fsms[0]
+    
+    ok, concept, _, _, fsms = learn_simple_concept('test_files/vertical_line.pat', verbose=False)
+    vl_fsm = fsms[0]
+
+    ok, concept, _, _, fsms = learn_simple_concept('test_files/t.pat', verbose=False)
+    t_fsm = fsms[0]
+
+    scene_desc, scene_matrix = load_matrix('test_files/scene2.txt')
+    print(scene_desc, " LOADED")
+    print_matrix(scene_matrix)
+
+    idobj = IdentifyObjects(scene_matrix)
+    num_objects = idobj.num_objects()
+    for i in range(num_objects):
+        mat = idobj.get_object_matrix(i)
+        print("\nStarting pattern recognition for: ")
+        print_matrix(mat)
+        
+        prk = FSMPatRecKernel(hl_fsm, mat, 0, 0)
+        rec, _, _ = prk.apply()
+        if rec:
+            print("horizontal line recognized")
+
+        prk = FSMPatRecKernel(vl_fsm, mat, 0, 0)
+        rec, _, _ = prk.apply()
+        if rec:
+            print("vertical line recognized")
+
+        prk = FSMPatRecKernel(t_fsm, mat, 0, 0)
+        rec, _, _ = prk.apply()
+        if rec:
+            print("T recognized")
+
 
 
 """
-
 OLD-MAINS (for testing purposes)
 
 
