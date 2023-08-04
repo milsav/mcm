@@ -471,7 +471,7 @@ if __name__ == "__main__":
     if ok:
         automata_memory.add_automata_to_memory(concept, True, fsms)
 
-    concept, matrix = load_matrix('test_files/square.pat')
+    concept, matrix = load_matrix('test_files/square_cross.pat')
     hoal = HOALearner(concept, matrix, automata_memory, verbose=True)
     hoa = hoal.learn()
     hoa.print()

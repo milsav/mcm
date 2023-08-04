@@ -28,3 +28,36 @@ scene with three squares
     x   x
     x   x
     xxxxxxx
+
+    
+xxxxxxxxxx
+x   x    x
+x   x    x
+x   x    x
+xxxxxxxxxx
+x   x    x
+x   x    x
+x   x    x
+x   x    x
+xxxxxxxxxx
+    
+    xxxxxxxxxxxxxxxxxxxx
+    x           x      x
+    x           x      x
+    x           x      x
+    x           x      x
+    x           x      x
+    x           x      x
+    x           x      x
+    x           x      x 
+    xxxxxxxxxxxxxxxxxxxx
+x   x           x      x
+x   x           x      x
+x   x           x      x
+x   x           x      x
+    x           x      x
+    x           x      x
+    x           x      x 
+    x           x      x
+    x           x      x
+    xxxxxxxxxxxxxxxxxxxx
