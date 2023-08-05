@@ -161,11 +161,29 @@ class HOALearner:
         self.activated_automata = []
 
         base_concepts = self.automata_memory.get_base_concepts()
+        complex_concepts = self.automata_memory.get_hoa_concepts()
 
         for i in range(self.dim_x):
             for j in range(self.dim_y):
                 start_field = str(i) + "-" + str(j)
                 if self.matrix[i][j] != ' ' and start_field not in visited_fields:
+                    # identify complex concepts
+                    hoa_activated = False
+                    for concept in complex_concepts:
+                        for hoa in self.automata_memory.get_automata(concept):
+                            prk = HOAPatRecKernel(hoa, self.matrix, i, j)
+                            rec, t, visited = prk.apply()
+                            if rec:
+                                for v in visited:
+                                    visited_fields.add(v)
+                                    print("VISITED ", v)
+                                self.activated_automata.append([concept, hoa, "HOA", visited, t])
+                                hoa_activated = True
+                                break 
+                    
+                    if hoa_activated:
+                        continue
+
                     # identify base concepts
                     for concept in base_concepts:
                         for automaton in self.automata_memory.get_automata(concept): 
@@ -173,6 +191,7 @@ class HOALearner:
                             rec, t, visited = prk.apply()
                             if rec:
                                 # check valid activations
+                                print("Activation [simple] ", visited)
                                 valid_activation = False
                                 for v in visited:
                                     if v != start_field and not v in visited_fields:
@@ -180,10 +199,16 @@ class HOALearner:
                                         break
 
                                 if valid_activation:
+                                    filter_visited = list()
                                     for v in visited:
-                                        visited_fields.add(v)
+                                        if v == start_field:
+                                            filter_visited.append(v)
+                                            visited_fields.add(v)
+                                        elif not v in visited_fields:
+                                            visited_fields.add(v)
+                                            filter_visited.append(v)
 
-                                    self.activated_automata.append([concept, automaton, "FSM", visited, t])
+                                    self.activated_automata.append([concept, automaton, "FSM", filter_visited, t])
                                     break      
 
         if self.verbose:
@@ -208,6 +233,7 @@ class HOALearner:
     def infere_automata_dependencies(self):
         for j in range(1, len(self.activated_automata)):
             for i in range(j):
+                print("INFERING DEPENDENCIES FOR ", i, j)
                 vf_i = self.activated_automata[i][3]
                 vf_j = self.activated_automata[j][3]
 
@@ -228,18 +254,24 @@ class HOALearner:
                             # both automata ends at same position
                             self.hoa.add_link(i, j, "END")
                         else:
+                            # print("OTHER")
                             # other incidences
                             incidences = [] 
+                            #print(vf_i)
+                            #print(vf_j)
                             for m in vf_i:
                                 for n in vf_j:
+                                    # print(m, n)
                                     nei, move = neigh(n, m)
                                     if nei:
                                         if move == "ID":
                                             # self.hoa.add_link(i, j, "INC")
                                             incidences.append("INC")
+                                            #print("INC")
                                         else:
                                             #self.hoa.add_link(i, j, "INC_" + move)
                                             incidences.append("INC_" + move)
+                                            #print("INC_" + move)
 
                             if self.verbose:
                                 if len(incidences) == 0:
@@ -300,15 +332,6 @@ class HOAPatRecKernel:
             # print("First automaton succesfully activated", self.x, self.y)
             self.activation_time[0] = t
             self.visited_fields[0] = visited
-
-            # rescale activation times
-            # diff = t - start_node_at
-            # for i in range(1, len(self.hoa.nodes)):
-            #    at = self.hoa.nodes[i].get_activation_time() + diff
-            #    self.activation_time.append(at)
-
-            # print("Rescaled activation times: ", self.activation_time)
-
             bfs_succesfull = self.bfs()
             if bfs_succesfull:
                 v = []
@@ -324,7 +347,7 @@ class HOAPatRecKernel:
         else:
             return False, 0, None
         
-
+    
     def bfs(self):
         graph = self.hoa.G
 
@@ -343,6 +366,7 @@ class HOAPatRecKernel:
             s_id = s.get_id()
             visited_nodes[s_id] = True
             link_type = graph.edges[start_node, s]["link_type"]
+            #print("BFS queue initialization -- ", link_type)
             queue.append((s, 0, link_type))
 
         link_constraints_to_check = []
@@ -352,16 +376,19 @@ class HOAPatRecKernel:
             curr_id = curr.get_id()
             prev_visited_fields = self.visited_fields[prev_id]
             
-            x, y = self.determine_starting_position(prev_visited_fields, link_type)
-            # print("Applying automaton", curr_id, " at", x, y)
+            positions = self.determine_starting_position(prev_visited_fields, link_type, curr)
+            # print("Positions == ", positions)
+            num_positions = len(positions)
+
+            if num_positions != 1:
+                return False
+            
+            x, y = positions[0][0], positions[0][1]
+            #print("Applying automaton", curr_id, " at", x, y)
             if self.on_table(x, y):
                 rec, t, visited_fields = self.apply_automaton(curr, x, y)
                 if not rec:
-                    # print("Pattern not recognized")
                     return False
-                #elif t != self.activation_time[curr_id]:
-                #    # print("Pattern recognized but with inappropriate activation time")
-                #    return False
                 else:
                     self.visited_fields[curr_id] = visited_fields
                     self.activation_time[curr_id] = t
@@ -393,19 +420,47 @@ class HOAPatRecKernel:
         return True
 
 
-    def determine_starting_position(self, prev_visited_fields, link_type):
+    def determine_starting_position(self, prev_visited_fields, link_type, automaton_node):
         if link_type == "START":
             x, y = parse_field(prev_visited_fields[0])
-            return x, y
+            return [[x, y]]
         elif link_type in LT_ARRAY:
             x, y = parse_field(prev_visited_fields[-1])
             ind = LT_ARRAY.index(link_type)
             x += dx[ind]
             y += dy[ind]
-            return x, y
+            return [[x, y]]
         else:
-            print("[ERROR, determine_starting_position] to fix")
-            return -1, -1
+            #print("[ERROR, determine_starting_position] to fix")
+            #print("Link type = ", link_type)
+            #print("Automaton", automaton_node.get_id(), " concept", automaton_node.get_concept())
+            
+            positions = []
+
+            move = None
+            try:
+                ui = link_type.index("_")
+                move = link_type[(ui + 1):]
+            except ValueError:
+                pass
+
+            #print("Move = ", move)
+            
+            for i in range(1, len(prev_visited_fields) - 1):
+                x, y = parse_field(prev_visited_fields[i])
+                if move != None:
+                    ind = LT_ARRAY.index(move)
+                    x += dx[ind]
+                    y += dy[ind]
+
+                # print("Trying automaton at", x, y)
+                if self.on_table(x, y):
+                    rec, _, _ = self.apply_automaton(automaton_node, x, y)
+                    if rec:
+                        # print("Automaton passed at", x, y)
+                        positions.append([x, y])
+
+            return positions
 
 
     def on_table(self, x, y):
@@ -432,6 +487,7 @@ class HOAPatRecKernel:
             return False
         else:
             print("[ERROR, check_constraint] to fix")
+            print("Constraint = ", constraint)
             return False 
 
 
@@ -471,11 +527,23 @@ if __name__ == "__main__":
     if ok:
         automata_memory.add_automata_to_memory(concept, True, fsms)
 
+    print("\n\n------------ LEARNING SQUARE")
+
+    concept, matrix = load_matrix('test_files/square.pat')
+    hoal = HOALearner(concept, matrix, automata_memory, verbose=True)
+    hoa = hoal.learn()
+    hoa.print()
+    automata_memory.add_automata_to_memory(concept, False, [hoa])
+
+    """
+    print("\n\n------------ LEARNING SQUARE CROSS")
+
     concept, matrix = load_matrix('test_files/square_cross.pat')
     hoal = HOALearner(concept, matrix, automata_memory, verbose=True)
     hoa = hoal.learn()
     hoa.print()
-
+    """
+    
     scene_desc, scene_matrix = load_matrix('test_files/scene1.txt')
     print(scene_desc, " LOADED")
     print_matrix(scene_matrix)
