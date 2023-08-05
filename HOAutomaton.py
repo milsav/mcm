@@ -167,7 +167,7 @@ class HOALearner:
             for j in range(self.dim_y):
                 start_field = str(i) + "-" + str(j)
                 if self.matrix[i][j] != ' ' and start_field not in visited_fields:
-                    # identify complex concepts
+                    # identify complex concepts (HOAs)
                     hoa_activated = False
                     for concept in complex_concepts:
                         for hoa in self.automata_memory.get_automata(concept):
@@ -176,15 +176,19 @@ class HOALearner:
                             if rec:
                                 for v in visited:
                                     visited_fields.add(v)
-                                    print("VISITED ", v)
                                 self.activated_automata.append([concept, hoa, "HOA", visited, t])
                                 hoa_activated = True
-                                break 
+                                break
+
+                        # only one HOA allowed
+                        if hoa_activated:
+                            break 
                     
+                    # if HOA activated then skip FSMs
                     if hoa_activated:
                         continue
 
-                    # identify base concepts
+                    # identify base concepts (FSMS)
                     for concept in base_concepts:
                         for automaton in self.automata_memory.get_automata(concept): 
                             prk = FSMPatRecKernel(automaton, self.matrix, i, j)
@@ -199,16 +203,9 @@ class HOALearner:
                                         break
 
                                 if valid_activation:
-                                    filter_visited = list()
                                     for v in visited:
-                                        if v == start_field:
-                                            filter_visited.append(v)
-                                            visited_fields.add(v)
-                                        elif not v in visited_fields:
-                                            visited_fields.add(v)
-                                            filter_visited.append(v)
-
-                                    self.activated_automata.append([concept, automaton, "FSM", filter_visited, t])
+                                        visited_fields.add(v)
+                                    self.activated_automata.append([concept, automaton, "FSM", visited, t])
                                     break      
 
         if self.verbose:
@@ -535,14 +532,12 @@ if __name__ == "__main__":
     hoa.print()
     automata_memory.add_automata_to_memory(concept, False, [hoa])
 
-    """
     print("\n\n------------ LEARNING SQUARE CROSS")
 
     concept, matrix = load_matrix('test_files/square_cross.pat')
     hoal = HOALearner(concept, matrix, automata_memory, verbose=True)
     hoa = hoal.learn()
     hoa.print()
-    """
     
     scene_desc, scene_matrix = load_matrix('test_files/scene1.txt')
     print(scene_desc, " LOADED")
