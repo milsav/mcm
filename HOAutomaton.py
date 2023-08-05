@@ -167,46 +167,12 @@ class HOALearner:
             for j in range(self.dim_y):
                 start_field = str(i) + "-" + str(j)
                 if self.matrix[i][j] != ' ' and start_field not in visited_fields:
-                    # identify complex concepts (HOAs)
-                    hoa_activated = False
-                    for concept in complex_concepts:
-                        for hoa in self.automata_memory.get_automata(concept):
-                            prk = HOAPatRecKernel(hoa, self.matrix, i, j)
-                            rec, t, visited = prk.apply()
-                            if rec:
-                                for v in visited:
-                                    visited_fields.add(v)
-                                self.activated_automata.append([concept, hoa, "HOA", visited, t])
-                                hoa_activated = True
-                                break
-
-                        # only one HOA allowed
-                        if hoa_activated:
-                            break 
-                    
-                    # if HOA activated then skip FSMs
+                    hoa_activated = self.identify_complex_concepts(i, j, complex_concepts, visited_fields)
                     if hoa_activated:
+                        # if HOA activated then skip FSMs
                         continue
 
-                    # identify base concepts (FSMS)
-                    for concept in base_concepts:
-                        for automaton in self.automata_memory.get_automata(concept): 
-                            prk = FSMPatRecKernel(automaton, self.matrix, i, j)
-                            rec, t, visited = prk.apply()
-                            if rec:
-                                # check valid activations
-                                print("Activation [simple] ", visited)
-                                valid_activation = False
-                                for v in visited:
-                                    if v != start_field and not v in visited_fields:
-                                        valid_activation = True
-                                        break
-
-                                if valid_activation:
-                                    for v in visited:
-                                        visited_fields.add(v)
-                                    self.activated_automata.append([concept, automaton, "FSM", visited, t])
-                                    break      
+                    self.identify_base_concepts(i, j, base_concepts, visited_fields, start_field)
 
         if self.verbose:
             print("Activated automata")
@@ -226,7 +192,62 @@ class HOALearner:
         # derive activation time constraints
         self.hoa.process_activation_times()
 
+
+    """
+    identify complex concepts that can be recognized by existing HOAs
+    """    
+    def identify_complex_concepts(self, i, j, complex_concepts, visited_fields):
+        # identify complex concepts (HOAs)
+        hoa_activated = False
+        for concept in complex_concepts:
+            for hoa in self.automata_memory.get_automata(concept):
+                prk = HOAPatRecKernel(hoa, self.matrix, i, j)
+                rec, t, visited = prk.apply()
+                if rec:
+                    for v in visited:
+                        visited_fields.add(v)
+                    
+                    self.activated_automata.append([concept, hoa, "HOA", visited, t])
+                    hoa_activated = True
+                    break
+
+                # only one HOA allowed
+                if hoa_activated:
+                    return True
+
+        return False 
     
+
+    """
+    identify base concepts that can be recognized by existing FSMs
+    """
+    def identify_base_concepts(self, i, j, base_concepts, visited_fields, start_field):
+        # identify base concepts (FSMS)
+        for concept in base_concepts:
+            for automaton in self.automata_memory.get_automata(concept): 
+                prk = FSMPatRecKernel(automaton, self.matrix, i, j)
+                rec, t, visited = prk.apply()
+                if rec:
+                    print("Activation [simple] ", visited)
+                    # check valid activations
+                    # an activation is valid if it covers at least one unvisited field
+                    valid_activation = False
+                    for v in visited:
+                        if v != start_field and not v in visited_fields:
+                            valid_activation = True
+                            break
+
+                    if valid_activation:
+                        for v in visited:
+                            visited_fields.add(v)
+                        
+                        self.activated_automata.append([concept, automaton, "FSM", visited, t])
+                        break      
+
+
+    """
+    identify dependencies between activated automata (links in HOA graphs)
+    """
     def infere_automata_dependencies(self):
         for j in range(1, len(self.activated_automata)):
             for i in range(j):
