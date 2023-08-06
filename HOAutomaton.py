@@ -167,12 +167,12 @@ class HOALearner:
             for j in range(self.dim_y):
                 start_field = str(i) + "-" + str(j)
                 if self.matrix[i][j] != ' ' and start_field not in visited_fields:
+                    print("SEARCHING ACTIVATIONS", start_field)
+                    
                     hoa_activated = self.identify_complex_concepts(i, j, complex_concepts, visited_fields)
-                    if hoa_activated:
+                    if not hoa_activated:
                         # if HOA activated then skip FSMs
-                        continue
-
-                    self.identify_base_concepts(i, j, base_concepts, visited_fields, start_field)
+                        self.identify_base_concepts(i, j, base_concepts, visited_fields, start_field)
 
         if self.verbose:
             print("Activated automata")
@@ -198,21 +198,16 @@ class HOALearner:
     """    
     def identify_complex_concepts(self, i, j, complex_concepts, visited_fields):
         # identify complex concepts (HOAs)
-        hoa_activated = False
         for concept in complex_concepts:
             for hoa in self.automata_memory.get_automata(concept):
                 prk = HOAPatRecKernel(hoa, self.matrix, i, j)
                 rec, t, visited = prk.apply()
                 if rec:
+                    print("Activation [complex] ", visited)
                     for v in visited:
                         visited_fields.add(v)
                     
                     self.activated_automata.append([concept, hoa, "HOA", visited, t])
-                    hoa_activated = True
-                    break
-
-                # only one HOA allowed
-                if hoa_activated:
                     return True
 
         return False 

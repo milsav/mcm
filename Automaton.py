@@ -6,7 +6,7 @@
 #
 # Authors: {svc, lucy}@dmi.uns.ac.rs
 
-
+import sys
 import networkx as nx
 from Matrix import dx, dy, link_type, load_matrix
 
@@ -521,6 +521,8 @@ def learn_simple_concept(pattern_matrix_file, verbose=False):
 
     return True, concept, mat, pg, fsms
 
+# LAST SVC MAIN
+"""
 if __name__ == "__main__":
     from Matrix import load_matrix, print_matrix
     from SceneAnalyzer import IdentifyObjects
@@ -559,7 +561,7 @@ if __name__ == "__main__":
         rec, _, _ = prk.apply()
         if rec:
             print("T recognized")
-
+"""
 
 
 """
@@ -722,3 +724,79 @@ if __name__ == "__main__":
                 if rec:
                     print("pattern recognized", x, y, " activation time", t, " visited cells", visited)
 """
+
+if __name__ == "__main__":
+    from Matrix import load_matrix, print_matrix, parse_field
+    from SceneAnalyzer import IdentifyObjects
+
+    args = sys.argv[1:]
+    
+    if ("-pat" not in args or "-sc" not in args) and "-h" not in args:
+        raise Exception("Arguments not formated correctly, use -h for help")
+    elif "-h" in args:
+        print("Help:")
+        print("After -pat add all patterns")
+        print("After -sc add ONE scene (if you add more than one last one will be taken)")
+    else:
+        patterns = []
+        scene = None
+
+        is_pat = False
+        for i in range(len(args)):
+            if args[i] == "-pat":
+                is_pat = True
+            elif args[i] == "-sc":
+                is_pat = False
+            else:
+                if is_pat:
+                    patterns.append(args[i])
+                else:
+                    scene = args[i]
+            i += 1
+
+        print("pats:", patterns)
+        print("scene:", scene)
+
+        learned_concepts = dict()
+
+        for pat in patterns:
+            ok, concept, _, _, fsms = learn_simple_concept('test_files/' + pat, verbose=True)
+            learned_concepts[concept] = fsms
+
+        print("learned concepts",learned_concepts)
+        scene_desc, scene_matrix = load_matrix('test_files/' + scene)
+        print(scene_desc, " LOADED")
+        print_matrix(scene_matrix)
+
+        idobj = IdentifyObjects(scene_matrix)
+        num_objects = idobj.num_objects()
+        for i in range(num_objects):
+            mat = idobj.get_object_matrix(i)
+            print("\n\n\nStarting pattern recognition for: ")
+            print_matrix(mat)
+        
+            pg = PatternGraph(mat)
+            starts = pg.start_nodes
+
+            for start in starts:
+                x, y = parse_field(start)
+                print("\nApplying automata at", x, y)
+                for concept in learned_concepts:
+                    fsms = learned_concepts[concept]
+                    noauto = len(fsms)
+                    for k in range(noauto):
+                        fsm = fsms[k]
+                        pkr = FSMPatRecKernel(fsm, mat, x, y)
+                        rec, _, _ = pkr.apply()
+                        if rec:
+                            print(concept, "recognized by automata", k)
+
+
+            """
+            for name, fsms in learned_concepts.items():
+                for fsm in fsms:
+                    pkr = FSMPatRecKernel(fsm, mat, 0, 0)
+                    rec, _, _ = pkr.apply()
+                    if rec:
+                        print(name, "recognized")
+            """
