@@ -60,6 +60,9 @@ class HOA:
         self.G = nx.DiGraph()
         self.num_nodes = 0
         self.nodes = []
+        self.link_constraints = []
+        self.identical_at = []
+        self.semi_identical_at = []
     
     
     def add_node(self, concept, automaton, automaton_type, activation_time):
@@ -72,6 +75,8 @@ class HOA:
     
     def add_link(self, src_index, dst_index, move_type, constraints):
         self.G.add_edge(self.nodes[src_index], self.nodes[dst_index], move_type=move_type, constraints=constraints)
+        for c in constraints:
+            self.link_constraints.append((src_index, dst_index, c))
     
     
     def print(self):
@@ -85,12 +90,17 @@ class HOA:
             src, dst = l
             print(src.get_id(), "-->", dst.get_id(), "move = ", self.G.edges[l]["move_type"], " constraints = ", self.G.edges[l]["constraints"])
 
+        print("-- link constraints")
+        for lc in self.link_constraints:
+            print(lc)
+
         print("-- activation time constraints")
         for x in self.identical_at:
             print(x[0], x[1], " identical activation time")
         for x in self.semi_identical_at:
             print(x[0], x[1], " semiidentical activation time")
     
+
     def connected(self):
         return nx.is_connected(self.G.to_undirected())
     
@@ -104,9 +114,6 @@ class HOA:
     
 
     def process_activation_times(self):
-        self.identical_at = []
-        self.semi_identical_at = []
-
         for j in range(1, self.num_nodes):
             for i in range(j):
                 at_i = self.nodes[i].get_activation_time()
@@ -126,6 +133,10 @@ class HOA:
 
     def get_semi_identical_at(self):
         return self.semi_identical_at
+    
+
+    def get_link_constraints(self):
+        return self.link_constraints
                 
 
 
@@ -338,6 +349,11 @@ class HOAPatRecKernel:
         self.visited_fields = [None] * hoa.num_nodes
         self.all_visisted_fields = []
 
+        # activation history
+        self.activated_nodes = list()
+        self.time_constraints_satisfied = list()
+        self.link_constraints_satisfied = list()
+
 
     def apply_automaton(self, hoa_node, x, y):
         autom = hoa_node.get_automaton()
@@ -362,6 +378,9 @@ class HOAPatRecKernel:
             self.activation_time[0] = t
             self.visited_fields[0] = visited
             self.all_visisted_fields.extend(visited)
+            self.activated_nodes.append(start_node.get_id())
+
+            # do bfs
             bfs_succesfull = self.bfs()
             if bfs_succesfull:
                 return True, len(self.all_visisted_fields), self.all_visisted_fields
@@ -413,9 +432,13 @@ class HOAPatRecKernel:
                 if not rec:
                     return False
                 else:
+                    # mark the current node as visited
                     self.visited_fields[curr_id] = visited_fields
                     self.all_visisted_fields.extend(visited_fields)
                     self.activation_time[curr_id] = t
+
+                    # update activation history
+                    self.activated_nodes.append(curr_id)
 
                     # add successor HOA nodes to the queue
                     succs = graph.successors(curr)
@@ -435,18 +458,18 @@ class HOAPatRecKernel:
                 return False
 
         # print("Checking activation time constraints")
-        ok = self.check_activation_time_constraints()
-        if not ok:
-            #print("Time constraints not satisfied")
-            return False
-
+        time_constraints_ok = self.check_activation_time_constraints()
+        
         # print("Checking link constraints")
+        link_constraints_ok = True
         for cc in link_constraints_to_check:
             if not self.check_link_constraint(cc[0], cc[1], cc[2]):
-                #print("Link constraint failed: ", cc[0], cc[1], cc[2])
-                return False
+                link_constraints_ok = False
+            else:
+                self.link_constraints_satisfied.append(cc)
             
-        return True
+        return time_constraints_ok and link_constraints_ok
+
 
 
     def determine_starting_position(self, prev_visited_fields, move_type, automaton_node):
@@ -524,13 +547,17 @@ class HOAPatRecKernel:
 
 
     def check_activation_time_constraints(self):
+        constraints_satisfied = True
+
         idat = self.hoa.get_identical_at()
         for k in idat:
             auto_1, auto_2 = k[0], k[1]
             at_1, at_2 = self.activation_time[auto_1], self.activation_time[auto_2]
             if at_1 != at_2:
                 # print("AT id constraint failed", auto_1, auto_2, at_1, at_2) 
-                return False 
+                constraints_satisfied = False
+            else:
+                self.time_constraints_satisfied.append(("ID", auto_1, auto_2)) 
 
         sidat = self.hoa.get_semi_identical_at()
         for k in sidat:
@@ -538,9 +565,33 @@ class HOAPatRecKernel:
             at_1, at_2 = self.activation_time[auto_1], self.activation_time[auto_2]
             if at_1 - at_2 != 1:
                 # print("AT sid constraint failed", auto_1, auto_2, at_1, at_2)
-                return False
+                constraints_satisfied = False
+            else:
+                self.time_constraints_satisfied.append(("SID", auto_1, auto_2))
 
-        return True
+        return constraints_satisfied
+    
+
+    def print_activation_history(self):
+        print("---- Activation history")
+        print("# activated nodes", len(self.activated_nodes), " # total nodes = ", self.hoa.num_nodes)
+        for node_id in self.activated_nodes:
+            node = self.hoa.nodes[node_id]
+            concept = node.get_concept()
+            print("Activated", node_id, concept)
+
+        total_time_constraints = len(self.hoa.get_identical_at()) + len(self.hoa.get_semi_identical_at())
+        print("# time constraints passed", len(self.time_constraints_satisfied), " # total constraints = ", total_time_constraints)
+        for c in self.time_constraints_satisfied:
+            print(c)
+
+        total_link_constraints = len(self.hoa.get_link_constraints())
+        print("# link constraints passed", len(self.link_constraints_satisfied), "# total constraints = ", total_link_constraints)
+        for c in self.link_constraints_satisfied:
+            print(c)
+        
+
+
 
 
 def learn_complex_concept(concept, matrix, automata_memory, verbose=False):
@@ -576,7 +627,7 @@ if __name__ == "__main__":
     print("\n\n------------ LEARNING SQUARE")
     concept, matrix = load_matrix('test_files/square.pat')
     learn_complex_concept(concept, matrix, automata_memory, verbose=True)
-
+    
     print("\n\n------------ LEARNING SQUARE CROSS")
     concept, matrix = load_matrix('test_files/square_cross.pat')
     learn_complex_concept(concept, matrix, automata_memory, verbose=True)
@@ -598,6 +649,7 @@ if __name__ == "__main__":
             print("Trying", hoa_concept)
             prk = HOAPatRecKernel(hoa, mat, 0, 0)
             rec, at, visited_fields = prk.apply()
+            prk.print_activation_history()
             if rec:
                 print("=================> ", hoa_concept, " recognized, activation time", at)
                 print(visited_fields)
