@@ -1,0 +1,38 @@
+Scene with 4 square-like objects (for testing purposes)
+
+    xxxxxxx
+    x   
+    x     
+    x     
+    x     x
+    x     x 
+    xxxxxxx   
+
+
+                   xxxxxxxxxxxx
+                   x          x
+                   x          x
+                   x          x
+                   xxxxxxxxxxxx
+
+    xxxxxxx
+    x     x
+    x     x
+    x     x
+    x     x
+    x     x
+    xxxxxxxxxxxxxxxxx
+
+    xxxxx       
+    x   x       
+    x   x       
+    x   x
+    xxxxx    
+
+
+          x
+         x x   
+        x   x 
+       x     x
+      x       x
+       xxxxxxx  

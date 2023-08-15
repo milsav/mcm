@@ -70,6 +70,7 @@ if __name__ == "__main__":
     from AutomataMemory import AutomataMemory
     from Automaton import learn_simple_concept
     from HOAutomaton import learn_complex_concept
+    from InferenceEngine import hoa_inference
 
     automata_memory = AutomataMemory()
 
@@ -89,24 +90,5 @@ if __name__ == "__main__":
 
     print("\n\nRECOGNITION TEST")
 
-    scene_desc, scene_matrix = load_matrix('test_files/scene3.txt')
-    print(scene_desc, " LOADED")
-    print_matrix(scene_matrix)
-
-    idobj = IdentifyObjects(scene_matrix)
-    num_objects = idobj.num_objects()
-    for i in range(num_objects):
-        mat = idobj.get_object_matrix(i)
-        print("\nStarting pattern recognition for: ")
-        print_matrix(mat)
-
-        for hoa_concept in automata_memory.get_hoa_concepts():
-            hoas = automata_memory.get_automata(hoa_concept)
-            hoa = hoas[0]
-            print("Trying", hoa_concept)
-            prk = HOAPatRecKernel(hoa, mat, 0, 0)
-            rec, at, visited_fields = prk.apply()
-            #prk.print_activation_history()
-            if rec:
-                print("=================> ", hoa_concept, " recognized, activation time", at)
-                print(visited_fields)
+    scene_desc, scene_matrix = load_matrix('test_files/scene4.txt')
+    hoa_inference('test_files/scene4.txt', automata_memory)
