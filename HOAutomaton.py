@@ -12,7 +12,7 @@
 import networkx as nx
 from collections import deque
 
-from Automaton import FSMPatRecKernel
+from Automaton import FSMPatRecKernel, PatternGraph
 from Matrix import neigh, parse_field, dx, dy
 from Matrix import link_type as LT_ARRAY
 from SceneAnalyzer import IdentifyObjects
@@ -174,14 +174,18 @@ class HOALearner:
         base_concepts = self.automata_memory.get_base_concepts()
         complex_concepts = self.automata_memory.get_hoa_concepts()
 
-        for i in range(self.dim_x):
-            for j in range(self.dim_y):
-                start_field = str(i) + "-" + str(j)
-                if self.matrix[i][j] != ' ' and start_field not in visited_fields:
-                    hoa_activated = self.identify_complex_concepts(i, j, complex_concepts, visited_fields)
-                    if not hoa_activated:
-                        # if HOA activated then skip FSMs
-                        self.identify_base_concepts(i, j, base_concepts, visited_fields, start_field)
+        bfs_order = self.bfs_traversal()
+        
+        #for i in range(self.dim_x):
+        #    for j in range(self.dim_y):
+        for start_field in bfs_order:
+            # start_field = str(i) + "-" + str(j)
+            i, j = parse_field(start_field)
+            if self.matrix[i][j] != ' ' and start_field not in visited_fields:
+                hoa_activated = self.identify_complex_concepts(i, j, complex_concepts, visited_fields)
+                if not hoa_activated:
+                    # if HOA activated then skip FSMs
+                    self.identify_base_concepts(i, j, base_concepts, visited_fields, start_field)
 
         if self.verbose:
             print("Activated automata")
@@ -204,6 +208,23 @@ class HOALearner:
 
         # derive activation time constraints
         self.hoa.process_activation_times()
+
+
+
+    """
+    BFS-traversal for pattern matrix
+    """
+    def bfs_traversal(self):
+        pg = PatternGraph(self.matrix)
+        ret = []
+        for l in nx.bfs_edges(pg.G, pg.first_node):
+            src, dst = l[0], l[1]
+            if src not in ret:
+                ret.append(src)
+            if dst not in ret:
+                ret.append(dst)
+
+        return ret
 
 
     """
@@ -660,7 +681,8 @@ if __name__ == "__main__":
     print("\n\n------------ LEARNING TRIANGLE")
     concept, matrix = load_matrix('test_files/triangle.pat')
     learn_complex_concept(concept, matrix, automata_memory, verbose=True)
-    
+
+     
     print("\n\n------------ AUTOMATA MEMORY")
     automata_memory.info()
 
@@ -681,11 +703,10 @@ if __name__ == "__main__":
             print("Trying", hoa_concept)
             prk = HOAPatRecKernel(hoa, mat, 0, 0)
             rec, at, visited_fields = prk.apply()
-            prk.print_activation_history()
+            #prk.print_activation_history()
             if rec:
                 print("=================> ", hoa_concept, " recognized, activation time", at)
                 print(visited_fields)
-
 
     
 

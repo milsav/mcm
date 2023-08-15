@@ -26,15 +26,15 @@ class PatternGraph:
         dimy = len(mat[0])
 
         self.G = nx.DiGraph()
-        first_node = None
+        self.first_node = None
 
         for i in range(dimx):
             for j in range(dimy):
                 if mat[i][j] != ' ':
                     node_id = str(i) + "-" + str(j)
                     self.G.add_node(node_id, x=i, y=j, symbol=mat[i][j])
-                    if first_node == None:
-                        first_node = node_id
+                    if self.first_node == None:
+                        self.first_node = node_id
 
         for i in range(dimx):
             for j in range(dimy):
