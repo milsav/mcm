@@ -11,6 +11,9 @@ class AutomataMemory:
         self.base_concepts = set()   # concepts recognized by base automata
         self.hoa_concepts = set()    # concepts recognized by higher-oder automat 
 
+        self.unknown_base_concepts = set()
+        self.unknown_hoa_concepts = set()
+
 
     """
     concept - string, automata -- list of automata
@@ -25,6 +28,13 @@ class AutomataMemory:
             self.base_concepts.add(concept)
         else:
             self.hoa_concepts.add(concept)
+
+        # check if the concept is unknown (unsupervised learning)
+        if concept.startswith("UNKNOWN-"):
+            if base_concept:
+                self.unknown_base_concepts.add(concept)
+            else:
+                self.unknown_hoa_concepts.add(concept)
 
 
     def get_base_concepts(self):
@@ -45,7 +55,12 @@ class AutomataMemory:
 
     def get_all_automata(self):
         return self.automata
-    
+
+
+    def get_concept_id_for_unknown(self, base_concept):
+        num = len(self.unknown_base_concepts) if base_concept else len(self.unknown_hoa_concepts)
+        return "UNKNOWN-" + str(num)
+
 
     def info(self):
         for c in self.automata:

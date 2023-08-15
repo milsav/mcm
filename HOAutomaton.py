@@ -338,7 +338,7 @@ class HOALearner:
     def check_visited_fields(self, visited_fields):
         for i in range(self.dim_x):
             for j in range(self.dim_y): 
-                f = matrix[i][j]
+                f = self.matrix[i][j]
                 f_str = str(i) + "-" + str(j)
                 if f != ' ' and f_str not in visited_fields:
                     return False
@@ -617,7 +617,6 @@ class HOAPatRecKernel:
 
 def learn_complex_concept(concept, matrix, automata_memory, verbose=False):
     try:
-        print(concept)
         hoal = HOALearner(concept, matrix, automata_memory, verbose)
         hoa = hoal.learn()
         if verbose:

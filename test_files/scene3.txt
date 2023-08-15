@@ -7,10 +7,11 @@ Scene with 4 square-like objects
     xxxxx   
 
 
-                   xxx
-                   x x
-                   x x
-                   xxx
+                   xxxxxxxxxx
+                   x        x
+                   x        x
+                   x        x
+                   xxxxxxxxxx
 
     xxxxx
     x   x

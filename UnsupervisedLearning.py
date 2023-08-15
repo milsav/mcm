@@ -5,7 +5,7 @@
 # 
 # Authors: {svc, lucy}@dmi.uns.ac.rs
 
-from Matrix import load_matrix
+from Matrix import load_matrix, print_matrix
 from SceneAnalyzer import IdentifyObjects
 from HOAutomaton import HOAPatRecKernel
 
@@ -46,13 +46,24 @@ class UnsupervisedLearner:
                     break
 
             if self.verbose:
+                print("\n")
+                print_matrix(mat)
                 if concept_recognized:
                     print("Object", i, " recognized as", concept_name)
                 else:
                     print("Object", i, " is not recognized by existing concepts")
 
             if not concept_recognized:
-                print("Please activate HOA learner")
+                concept_id = self.automata_memory.get_concept_id_for_unknown(False)
+                ok = learn_complex_concept(concept_id, mat, automata_memory, self.verbose)
+                if self.verbose:
+                    if not ok:
+                        print("Learning complex concept failed for object", i)
+                    else:
+                        print("Learning complex concept for object", i, " passed succesfully")
+                        hoa = automata_memory.get_automata(concept_id)[0]
+                        hoa.print()
+
 
 
 if __name__ == "__main__":
@@ -72,9 +83,6 @@ if __name__ == "__main__":
 
     concept, matrix = load_matrix('test_files/square.pat')
     learn_complex_concept(concept, matrix, automata_memory, verbose=False)
-
-    #print("Automata memory")
-    #automata_memory.info()
 
     ul = UnsupervisedLearner("test_files/scene3.txt", automata_memory, verbose=True)
     ul.identify_and_learn_unknown_concepts()
