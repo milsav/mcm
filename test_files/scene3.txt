@@ -1,0 +1,33 @@
+Scene with 4 square-like objects
+
+    xxxxx
+    x   
+    x   x
+    x   x
+    xxxxx   
+
+
+                   xxx
+                   x x
+                   x x
+                   xxx
+
+    xxxxx
+    x   x
+    x   x
+    x   x
+    xxxxxxx
+
+    xxxxx       
+    x   x       
+    x   x       
+    x   x
+    xxxxx    
+
+
+          x
+         x x   
+        x   x 
+       x     x
+      x       x
+       xxxxxxx  

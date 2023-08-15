@@ -193,6 +193,10 @@ class HOALearner:
                 print(a[4])
                 print("\n")
 
+        ok = self.check_visited_fields(visited_fields)
+        if not ok:
+            raise Exception("[ERROR, HOALearner] matrix contains unvisited fields")
+
         # create nodes in HOA graph
         for a in self.activated_automata:
             concept, automaton, automaton_type, activation_time = a[0], a[1], a[2], a[4]
@@ -328,6 +332,23 @@ class HOALearner:
         return incidences
 
 
+    """
+    check whether all fields are visited
+    """
+    def check_visited_fields(self, visited_fields):
+        for i in range(self.dim_x):
+            for j in range(self.dim_y): 
+                f = matrix[i][j]
+                f_str = str(i) + "-" + str(j)
+                if f != ' ' and f_str not in visited_fields:
+                    return False
+                
+        return True
+
+
+    """
+    learning entry point
+    """
     def learn(self):
         self.identify_automata()
         self.infere_automata_dependencies()
@@ -602,9 +623,14 @@ def learn_complex_concept(concept, matrix, automata_memory, verbose=False):
         if verbose:
             hoa.print() 
 
+        if hoa.num_nodes == 0:
+            raise Exception("[ERROR, HOALearner] empty hoa due to unknown base concepts")
+
         automata_memory.add_automata_to_memory(concept, False, [hoa])
+        return True
     except Exception as error:
         print("Learning ", concept, "failed, error: ", error)
+        return False
 
 
 
@@ -632,6 +658,13 @@ if __name__ == "__main__":
     concept, matrix = load_matrix('test_files/square_cross.pat')
     learn_complex_concept(concept, matrix, automata_memory, verbose=True)
     
+    print("\n\n------------ LEARNING TRIANGLE")
+    concept, matrix = load_matrix('test_files/triangle.pat')
+    learn_complex_concept(concept, matrix, automata_memory, verbose=True)
+    
+    print("\n\n------------ AUTOMATA MEMORY")
+    automata_memory.info()
+
     scene_desc, scene_matrix = load_matrix('test_files/scene1.txt')
     print(scene_desc, " LOADED")
     print_matrix(scene_matrix)
