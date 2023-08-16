@@ -497,13 +497,12 @@ class FSMPatRecKernel:
         return feasible_trans, empty_present, selfloop_present
 
 
-def learn_simple_concept(pattern_matrix_file, verbose=False):
-    concept, mat = load_matrix(pattern_matrix_file)
+def learn_simple_concept_from_matrix(pattern_matrix, verbose=False):
     fsms = []
 
-    pg = PatternGraph(mat)
+    pg = PatternGraph(pattern_matrix)
     if not pg.is_concept_simple():
-        return False, concept, mat, pg, []
+        return False, pg, []
     
     start_nodes = pg.start_nodes
     for sn in start_nodes:
@@ -519,7 +518,13 @@ def learn_simple_concept(pattern_matrix_file, verbose=False):
     if verbose:
         print("Total FSMs", len(fsms))
 
-    return True, concept, mat, pg, fsms
+    return True, pg, fsms
+
+
+def learn_simple_concept(pattern_matrix_file, verbose=False):
+    concept, pattern_matrix = load_matrix(pattern_matrix_file)
+    ok, pg, fsms = learn_simple_concept_from_matrix(pattern_matrix, verbose)
+    return ok, concept, pattern_matrix, pg, fsms
 
 
 #

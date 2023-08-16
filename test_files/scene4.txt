@@ -36,3 +36,25 @@ Scene with 4 square-like objects (for testing purposes)
        x     x
       x       x
        xxxxxxx  
+
+
+    xxxxxxxxxxxxxxxxxxxx
+    x           x      x
+    x           x      x
+    x           x      x
+    x           x      x
+    x           x      x
+    x           x      x
+    x           x      x
+    x           x      x 
+    xxxxxxxxxxxxxxxxxxxx
+x   x           x      x
+x   x           x      x
+x   x           x      x
+x   x           x      x
+    x           x      x
+    x           x      x
+    x           x      x 
+    x           x      x
+    x           x      x
+    xxxxxxxxxxxxxxxxxxxx

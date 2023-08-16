@@ -8,6 +8,7 @@
 from Matrix import load_matrix, print_matrix
 from SceneAnalyzer import IdentifyObjects
 from HOAutomaton import learn_complex_concept
+from Automaton import learn_simple_concept_from_matrix
 
 class UnsupervisedLearner:
     def __init__(self, scene_file, automata_memory, verbose=False):
@@ -29,29 +30,39 @@ class UnsupervisedLearner:
 
         for i in range(num_objects):
             mat = idobj.get_object_matrix(i)
-            
-            sat_concepts = self.automata_memory.retrieve_satisfiable_hoa_concepts(mat)
-            concept_recognized = len(sat_concepts) > 0
-
             if self.verbose:
-                print("\n")
+                print("\nProcessing")
                 print_matrix(mat)
-                if concept_recognized:
-                    print("Object", i, " recognized as: ", ",".join([sat[0] for sat in sat_concepts]))
-                else:
-                    print("Object", i, " is not recognized by existing concepts")
+            
+            complex_concept_recognized, base_concept_recognized = False, False
 
+            sat_concepts = self.automata_memory.retrieve_satisfiable_hoa_concepts(mat)
+            complex_concept_recognized = len(sat_concepts) > 0
+            if not complex_concept_recognized:
+                sat_concepts = self.automata_memory.retrieve_satisfiable_basic_concepts(mat)
+                base_concept_recognized = len(sat_concepts) > 0
+
+            concept_recognized = complex_concept_recognized or base_concept_recognized
+
+            if self.verbose and concept_recognized:
+                concept_type = "HOA" if complex_concept_recognized else "FSM"
+                print("Object", i, " recognized as: ", ",".join([sat[0] for sat in sat_concepts]), " #", concept_type)
+            
+            
             if not concept_recognized:
                 concept_id = self.automata_memory.get_concept_id_for_unknown(False)
-                ok, msg = learn_complex_concept(concept_id, mat, self.automata_memory, self.verbose)
-                if self.verbose:
-                    if not ok:
-                        print("Learning complex concept failed for object", i)
-                        print(msg)
-                    else:
-                        print("Learning complex concept for object", i, " passed succesfully")
-                        hoa = self.automata_memory.get_automata(concept_id)[0]
-                        hoa.print()
+                ok, _ = learn_complex_concept(concept_id, mat, self.automata_memory, self.verbose)
+                if ok and self.verbose:
+                    print("Learning complex concept for object", i, " passed successfully --> ", concept_id)
+
+                if not ok:
+                    passed, _, fsms = learn_simple_concept_from_matrix(mat, self.verbose)
+                    if passed:
+                        concept_id = self.automata_memory.get_concept_id_for_unknown(True)
+                        self.automata_memory.add_automata_to_memory(concept_id, True, fsms)
+                        if self.verbose:
+                            print("Learning base concept for object", i, "passed successfully --> ", concept_id)
+            
 
 
 

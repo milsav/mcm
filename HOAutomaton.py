@@ -188,14 +188,11 @@ class HOALearner:
                     self.identify_base_concepts(i, j, base_concepts, visited_fields, start_field)
 
         if self.verbose:
-            print("Activated automata")
-            for a in self.activated_automata:
-                print(a[0])
-                a[1].print()
-                print(a[2])
-                print(a[3])
-                print(a[4])
-                print("\n")
+            if len(self.activated_automata) == 0:
+                print("0 automata activated")
+            else:
+                print("Activated automata: ", ",".join([a[0] for a in self.activated_automata]))
+                
 
         #ok = self.check_visited_fields(visited_fields)
         ok = coverage(visited_fields, self.matrix)
@@ -239,7 +236,7 @@ class HOALearner:
                 rec, t, visited = prk.apply()
                 if rec:
                     if self.verbose:
-                        print("Activation [complex] ", visited)
+                        print("Activation [complex] ", visited, ", HOA: ", concept)
                     
                     for v in visited:
                         visited_fields.add(v)
@@ -260,9 +257,6 @@ class HOALearner:
                 prk = FSMPatRecKernel(automaton, self.matrix, i, j)
                 rec, t, visited = prk.apply()
                 if rec:
-                    if self.verbose:
-                        print("Activation [simple] ", visited)
-                    
                     # check valid activations
                     # an activation is valid if it covers at least one unvisited field
                     valid_activation = False
@@ -272,6 +266,8 @@ class HOALearner:
                             break
 
                     if valid_activation:
+                        if self.verbose:
+                            print("Activation [simple] ", visited, ", FSM: ", concept)
                         for v in visited:
                             visited_fields.add(v)
                         

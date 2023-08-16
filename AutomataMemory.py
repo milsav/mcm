@@ -61,8 +61,9 @@ class AutomataMemory:
 
 
     def get_concept_id_for_unknown(self, base_concept):
+        concept_type = "FSM" if base_concept else "HOA"
         num = len(self.unknown_base_concepts) if base_concept else len(self.unknown_hoa_concepts)
-        return "UNKNOWN-" + str(num)
+        return "UNKNOWN-" + concept_type + "-" + str(num)
 
 
     def retrieve_satisfiable_hoa_concepts(self, matrix, return_only_first=False):
