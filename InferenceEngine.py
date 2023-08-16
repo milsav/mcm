@@ -4,7 +4,7 @@
 #
 # Authors: {svc, lucy}@dmi.uns.ac.rs
 
-from Matrix import load_matrix, print_matrix
+from Matrix import load_matrix, print_matrix, determine_first_nonempty_pixel
 from SceneAnalyzer import IdentifyObjects
 from HOAutomaton import HOAPatRecKernel
 
@@ -22,11 +22,10 @@ def hoa_inference(scene_file, automata_memory, show_activation_history=False):
 
         for hoa_concept in automata_memory.get_hoa_concepts():
             hoas = automata_memory.get_automata(hoa_concept)
-            try_num = 0
             for hoa in hoas:
-                print("Trying", hoa_concept, try_num)
-                try_num += 1
-                prk = HOAPatRecKernel(hoa, mat, 0, 0)
+                pos = determine_first_nonempty_pixel(mat)
+                print("Trying", hoa_concept, "at", pos)
+                prk = HOAPatRecKernel(hoa, mat, pos[0], pos[1])
                 rec, at, visited_fields = prk.apply()
             
                 if show_activation_history:

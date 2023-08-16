@@ -120,5 +120,29 @@ def _neigh(f1_x, f1_y, f2_x, f2_y):
     else:
         return False, None
     
+    
+"""
+function to determine the first nonempty field in a matrix
+"""
+def determine_first_nonempty_pixel(mat):
+    dimx, dimy = len(mat), len(mat[0])
+    for i in range(dimx):
+        for j in range(dimy):
+            if mat[i][j] != ' ':
+                return i, j
+    
 
 
+"""
+check whether fields set covers 
+"""
+def coverage(fields, mat):
+    dimx, dimy = len(mat), len(mat[0])
+    for i in range(dimx):
+        for j in range(dimy): 
+            f = mat[i][j]
+            f_str = str(i) + "-" + str(j)
+            if f != ' ' and f_str not in fields:
+                return False
+                
+    return True

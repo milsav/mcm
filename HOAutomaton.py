@@ -13,7 +13,7 @@ import networkx as nx
 from collections import deque
 
 from Automaton import FSMPatRecKernel, PatternGraph
-from Matrix import neigh, parse_field, dx, dy
+from Matrix import neigh, parse_field, dx, dy, coverage
 from Matrix import link_type as LT_ARRAY
 from SceneAnalyzer import IdentifyObjects
 
@@ -153,8 +153,8 @@ class HOALearner:
 
         self.concept = concept
         self.matrix = matrix
-        self.dim_x = len(matrix)
-        self.dim_y = len(matrix[0])
+        #self.dim_x = len(matrix)
+        #self.dim_y = len(matrix[0])
         self.verbose = verbose
         self.hoa = HOA(concept)
 
@@ -197,7 +197,8 @@ class HOALearner:
                 print(a[4])
                 print("\n")
 
-        ok = self.check_visited_fields(visited_fields)
+        #ok = self.check_visited_fields(visited_fields)
+        ok = coverage(visited_fields, self.matrix)
         if not ok:
             raise Exception("[ERROR, HOALearner] matrix contains unvisited fields")
 
@@ -354,8 +355,10 @@ class HOALearner:
 
 
     """
+    SVC: moved to Matrix.py
+    
     check whether all fields are visited
-    """
+    
     def check_visited_fields(self, visited_fields):
         for i in range(self.dim_x):
             for j in range(self.dim_y): 
@@ -365,6 +368,7 @@ class HOALearner:
                     return False
                 
         return True
+    """
 
 
     """
@@ -647,16 +651,15 @@ def learn_complex_concept(concept, matrix, automata_memory, verbose=False):
             raise Exception("[ERROR, HOALearner] empty hoa due to unknown base concepts")
 
         automata_memory.add_automata_to_memory(concept, False, [hoa])
-        return True
+        return True, "OK"
     except Exception as error:
-        print("Learning ", concept, "failed, error: ", error)
-        return False
+        #print("Learning ", concept, "failed, error: ", error)
+        return False, "Learning " + concept + " failed: " + str(error)
 
 
 
 if __name__ == "__main__":
     from Matrix import load_matrix
-    from SceneAnalyzer import IdentifyObjects
     from AutomataMemory import AutomataMemory
     from Automaton import learn_simple_concept
     from InferenceEngine import hoa_inference
@@ -673,17 +676,22 @@ if __name__ == "__main__":
 
     print("\n\n------------ LEARNING SQUARE")
     concept, matrix = load_matrix('test_files/square.pat')
-    learn_complex_concept(concept, matrix, automata_memory, verbose=True)
-    
+    ok, msg = learn_complex_concept(concept, matrix, automata_memory, verbose=True)
+    if not ok:
+        print(msg)
+
     print("\n\n------------ LEARNING SQUARE CROSS")
     concept, matrix = load_matrix('test_files/square_cross.pat')
-    learn_complex_concept(concept, matrix, automata_memory, verbose=True)
-    
+    ok, msg = learn_complex_concept(concept, matrix, automata_memory, verbose=True)
+    if not ok:
+        print(msg)
+
     print("\n\n------------ LEARNING TRIANGLE")
     concept, matrix = load_matrix('test_files/triangle.pat')
-    learn_complex_concept(concept, matrix, automata_memory, verbose=True)
+    ok, msg = learn_complex_concept(concept, matrix, automata_memory, verbose=True)
+    if not ok:
+        print(msg)
 
-     
     print("\n\n------------ AUTOMATA MEMORY")
     automata_memory.info()
 

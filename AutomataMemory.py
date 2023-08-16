@@ -4,6 +4,9 @@
 #
 # Authors: {svc, lucy}@dmi.uns.ac.rs
 
+from Matrix import determine_first_nonempty_pixel, parse_field, coverage
+from HOAutomaton import HOAPatRecKernel
+from Automaton import FSMPatRecKernel, PatternGraph
 
 class AutomataMemory:
     def __init__(self):
@@ -62,7 +65,40 @@ class AutomataMemory:
         return "UNKNOWN-" + str(num)
 
 
+    def hoa_concept_exists(self, matrix):
+        first_pixel = determine_first_nonempty_pixel(matrix)
+        for hoa_concept in self.hoa_concepts:
+            hoas = self.automata[hoa_concept]
+            for hoa in hoas:
+                prk = HOAPatRecKernel(hoa, matrix, first_pixel[0], first_pixel[1])
+                rec, _, visited_fields = prk.apply()
+                if rec and coverage(visited_fields, matrix):
+                    return True, hoa_concept
+                
+        return False, ""
+    
+
+    def simple_concept_exists(self, matrix):
+        pg = PatternGraph(matrix)
+        starts = pg.start_nodes
+        for start in starts:
+            x, y = parse_field(start)
+            for base_concept in self.base_concepts:
+                fsms = self.automata[base_concept]
+                for fsm in fsms:
+                    pkr = FSMPatRecKernel(fsm, matrix, x, y)
+                    rec, _, visited_fields = pkr.apply()
+                    if rec and coverage(visited_fields, matrix):
+                        return True, base_concept
+                    
+        return False, ""
+
+
     def info(self):
+        if len(self.automata) == 0:
+            print("Empty automata memory")
+            return
+        
         for c in self.automata:
             print("Concept", c)
             print("#automata", len(self.automata[c]))

@@ -561,7 +561,7 @@ if __name__ == "__main__":
             ok, concept, _, _, fsms = learn_simple_concept('test_files/' + pat, verbose=True)
             learned_concepts[concept] = fsms
 
-        print("learned concepts",learned_concepts)
+        print("learned concepts", learned_concepts)
         scene_desc, scene_matrix = load_matrix('test_files/' + scene)
         print(scene_desc, " LOADED")
         print_matrix(scene_matrix)

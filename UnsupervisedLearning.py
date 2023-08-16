@@ -7,7 +7,7 @@
 
 from Matrix import load_matrix, print_matrix
 from SceneAnalyzer import IdentifyObjects
-from HOAutomaton import HOAPatRecKernel
+from HOAutomaton import learn_complex_concept
 
 class UnsupervisedLearner:
     def __init__(self, scene_file, automata_memory, verbose=False):
@@ -30,21 +30,8 @@ class UnsupervisedLearner:
         for i in range(num_objects):
             mat = idobj.get_object_matrix(i)
             
-            concept_recognized = False
-            concept_name = "None"
-            for hoa_concept in self.automata_memory.get_hoa_concepts():
-                hoas = self.automata_memory.get_automata(hoa_concept)
-                for hoa in hoas:
-                    prk = HOAPatRecKernel(hoa, mat, 0, 0)
-                    rec, _, _ = prk.apply()
-                    if rec:
-                        concept_recognized = True
-                        concept_name = hoa_concept
-                        break
-
-                if concept_recognized:
-                    break
-
+            concept_recognized, concept_name = self.automata_memory.hoa_concept_exists(mat)
+    
             if self.verbose:
                 print("\n")
                 print_matrix(mat)
@@ -55,13 +42,14 @@ class UnsupervisedLearner:
 
             if not concept_recognized:
                 concept_id = self.automata_memory.get_concept_id_for_unknown(False)
-                ok = learn_complex_concept(concept_id, mat, automata_memory, self.verbose)
+                ok, msg = learn_complex_concept(concept_id, mat, self.automata_memory, self.verbose)
                 if self.verbose:
                     if not ok:
                         print("Learning complex concept failed for object", i)
+                        print(msg)
                     else:
                         print("Learning complex concept for object", i, " passed succesfully")
-                        hoa = automata_memory.get_automata(concept_id)[0]
+                        hoa = self.automata_memory.get_automata(concept_id)[0]
                         hoa.print()
 
 
@@ -69,7 +57,6 @@ class UnsupervisedLearner:
 if __name__ == "__main__":
     from AutomataMemory import AutomataMemory
     from Automaton import learn_simple_concept
-    from HOAutomaton import learn_complex_concept
     from InferenceEngine import hoa_inference
 
     automata_memory = AutomataMemory()
