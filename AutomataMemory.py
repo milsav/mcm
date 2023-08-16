@@ -4,15 +4,16 @@
 #
 # Authors: {svc, lucy}@dmi.uns.ac.rs
 
-from Matrix import determine_first_nonempty_pixel, parse_field, coverage
+from Matrix import determine_first_nonempty_pixel, parse_field, coverage, print_matrix
 from HOAutomaton import HOAPatRecKernel
 from Automaton import FSMPatRecKernel, PatternGraph
 
 class AutomataMemory:
     def __init__(self):
-        self.automata = dict()
+        self.automata = dict()       # map from concepts to automata recognizing concepts
+        self.patterns = dict()       # map from concepts to patterns used to learn concepts
         self.base_concepts = set()   # concepts recognized by base automata
-        self.hoa_concepts = set()    # concepts recognized by higher-oder automat 
+        self.hoa_concepts = set()    # concepts recognized by higher-oder automata 
 
         self.unknown_base_concepts = set()
         self.unknown_hoa_concepts = set()
@@ -21,11 +22,13 @@ class AutomataMemory:
     """
     concept - string, automata -- list of automata
     """
-    def add_automata_to_memory(self, concept, base_concept, automata):
+    def add_automata_to_memory(self, concept, base_concept, automata, pattern_matrix):
         if concept in self.automata:
             self.automata[concept].extend(automata)
+            self.patterns[concept].extend(pattern_matrix)
         else:
             self.automata[concept] = automata
+            self.patterns[concept] = [pattern_matrix]
 
         if base_concept:
             self.base_concepts.add(concept)
@@ -54,6 +57,14 @@ class AutomataMemory:
             return []
         else:
             return self.automata[concept]
+        
+    
+    def get_patterns(self, concept):
+        if not concept in self.patterns:
+            print("[Warning] No patterns for concept ", concept)
+            return []
+        else:
+            return self.patterns[concept]    
         
 
     def get_all_automata(self):
@@ -110,6 +121,9 @@ class AutomataMemory:
         
         for c in self.automata:
             print("Concept", c)
+            print("Pattern")
+            for p in self.patterns[c]:
+                print_matrix(p)
             print("#automata", len(self.automata[c]))
             cnt = 0
             for a in self.automata[c]:
@@ -124,25 +138,25 @@ if __name__ == "__main__":
     automata_memory = AutomataMemory()
 
     from Automaton import learn_simple_concept
-    ok, concept, _, _, fsms = learn_simple_concept('test_files/vertical_line.pat', verbose=False)
+    ok, concept, mat, _, fsms = learn_simple_concept('test_files/vertical_line.pat', verbose=False)
     if ok:
-        automata_memory.add_automata_to_memory(concept, True, fsms)
+        automata_memory.add_automata_to_memory(concept, True, fsms, mat)
 
-    ok, concept, _, _, fsms = learn_simple_concept('test_files/horizontal_line.pat', verbose=False)
+    ok, concept, mat, _, fsms = learn_simple_concept('test_files/horizontal_line.pat', verbose=False)
     if ok:
-        automata_memory.add_automata_to_memory(concept, True, fsms)
+        automata_memory.add_automata_to_memory(concept, True, fsms, mat)
 
-    ok, concept, _, _, fsms = learn_simple_concept('test_files/square.pat', verbose=False)
+    ok, concept, mat, _, fsms = learn_simple_concept('test_files/square.pat', verbose=False)
     if ok:
-        automata_memory.add_automata_to_memory(concept, True, fsms)
+        automata_memory.add_automata_to_memory(concept, True, fsms, mat)
 
-    ok, concept, _, _, fsms = learn_simple_concept('test_files/scene1.txt', verbose=False)
+    ok, concept, mat, _, fsms = learn_simple_concept('test_files/scene1.txt', verbose=False)
     if ok:
-        automata_memory.add_automata_to_memory(concept, True, fsms)
+        automata_memory.add_automata_to_memory(concept, True, fsms, mat)
 
-    ok, concept, _, _, fsms = learn_simple_concept('test_files/t.pat', verbose=False)
+    ok, concept, mat, _, fsms = learn_simple_concept('test_files/t.pat', verbose=False)
     if ok:
-        automata_memory.add_automata_to_memory(concept, True, fsms)
+        automata_memory.add_automata_to_memory(concept, True, fsms, mat)
 
     automata_memory.info()
 

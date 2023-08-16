@@ -50,7 +50,7 @@ class HOANode:
         return self.node_id
     
     def print(self):
-        print(str(self.node_id) + "-" + self.concept + "-" + str(self.activation_time))
+        print(str(self.node_id) + "-" + self.concept)
 
 
 
@@ -646,7 +646,7 @@ def learn_complex_concept(concept, matrix, automata_memory, verbose=False):
         if hoa.num_nodes == 0:
             raise Exception("[ERROR, HOALearner] empty hoa due to unknown base concepts")
 
-        automata_memory.add_automata_to_memory(concept, False, [hoa])
+        automata_memory.add_automata_to_memory(concept, False, [hoa], matrix)
         return True, "OK"
     except Exception as error:
         #print("Learning ", concept, "failed, error: ", error)
@@ -662,13 +662,13 @@ if __name__ == "__main__":
 
     automata_memory = AutomataMemory()
 
-    ok, concept, _, _, fsms = learn_simple_concept('test_files/vertical_line.pat', verbose=False)
+    ok, concept, pattern_matrix, _, fsms = learn_simple_concept('test_files/vertical_line.pat', verbose=False)
     if ok:
-        automata_memory.add_automata_to_memory(concept, True, fsms)
+        automata_memory.add_automata_to_memory(concept, True, fsms, pattern_matrix)
 
-    ok, concept, _, _, fsms = learn_simple_concept('test_files/horizontal_line.pat', verbose=False)
+    ok, concept, pattern_matrix, _, fsms = learn_simple_concept('test_files/horizontal_line.pat', verbose=False)
     if ok:
-        automata_memory.add_automata_to_memory(concept, True, fsms)
+        automata_memory.add_automata_to_memory(concept, True, fsms, pattern_matrix)
 
     print("\n\n------------ LEARNING SQUARE")
     concept, matrix = load_matrix('test_files/square.pat')

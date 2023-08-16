@@ -38,4 +38,4 @@ Scene with 4 square-like objects
         x   x 
        x     x
       x       x
-       xxxxxxx  
+     xxxxxxxxxxx  

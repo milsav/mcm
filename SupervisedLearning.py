@@ -4,7 +4,7 @@
 # 
 # Authors: {svc, lucy}@dmi.uns.ac.rs
 
-from Matrix import load_matrix
+from Matrix import load_matrix, print_matrix
 from HOAutomaton import learn_complex_concept
 from Automaton import PatternGraph, FSMLearner
 
@@ -46,11 +46,9 @@ class SupervisedLearner:
                 # learn FSM for a simple concept
                 start_nodes = self.pattern_graph.start_nodes
                 fsms = [FSMLearner(self.pattern_graph, sn).learn() for sn in start_nodes]
-                self.automata_memory.add_automata_to_memory(self.concept, True, fsms)
+                self.automata_memory.add_automata_to_memory(self.concept, True, fsms, self.pattern_matrix)
                 if self.verbose:
                     print("Concept", self.concept, "learned as simple")
-
-
 
 
 if __name__ == "__main__":

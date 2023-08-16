@@ -30,9 +30,9 @@ class UnsupervisedLearner:
 
         for i in range(num_objects):
             mat = idobj.get_object_matrix(i)
-            if self.verbose:
-                print("\nProcessing")
-                print_matrix(mat)
+            #if self.verbose:
+            #    print("\nProcessing")
+            #    print_matrix(mat)
             
             complex_concept_recognized, base_concept_recognized = False, False
 
@@ -48,7 +48,6 @@ class UnsupervisedLearner:
                 concept_type = "HOA" if complex_concept_recognized else "FSM"
                 print("Object", i, " recognized as: ", ",".join([sat[0] for sat in sat_concepts]), " #", concept_type)
             
-            
             if not concept_recognized:
                 concept_id = self.automata_memory.get_concept_id_for_unknown(False)
                 ok, _ = learn_complex_concept(concept_id, mat, self.automata_memory, self.verbose)
@@ -59,7 +58,8 @@ class UnsupervisedLearner:
                     passed, _, fsms = learn_simple_concept_from_matrix(mat, self.verbose)
                     if passed:
                         concept_id = self.automata_memory.get_concept_id_for_unknown(True)
-                        self.automata_memory.add_automata_to_memory(concept_id, True, fsms)
+                        self.automata_memory.add_automata_to_memory(concept_id, True, fsms, mat)
+                        
                         if self.verbose:
                             print("Learning base concept for object", i, "passed successfully --> ", concept_id)
             
@@ -73,13 +73,13 @@ if __name__ == "__main__":
 
     automata_memory = AutomataMemory()
 
-    ok, concept, _, _, fsms = learn_simple_concept('test_files/vertical_line.pat', verbose=False)
+    ok, concept, pattern_matrix, _, fsms = learn_simple_concept('test_files/vertical_line.pat', verbose=False)
     if ok:
-        automata_memory.add_automata_to_memory(concept, True, fsms)
+        automata_memory.add_automata_to_memory(concept, True, fsms, pattern_matrix)
 
-    ok, concept, _, _, fsms = learn_simple_concept('test_files/horizontal_line.pat', verbose=False)
+    ok, concept, pattern_matrix, _, fsms = learn_simple_concept('test_files/horizontal_line.pat', verbose=False)
     if ok:
-        automata_memory.add_automata_to_memory(concept, True, fsms)
+        automata_memory.add_automata_to_memory(concept, True, fsms, pattern_matrix)
 
     concept, matrix = load_matrix('test_files/square.pat')
     learn_complex_concept(concept, matrix, automata_memory, verbose=False)
