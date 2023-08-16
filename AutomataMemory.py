@@ -65,7 +65,9 @@ class AutomataMemory:
         return "UNKNOWN-" + str(num)
 
 
-    def hoa_concept_exists(self, matrix):
+    def retrieve_satisfiable_hoa_concepts(self, matrix, return_only_first=False):
+        sat = []
+        
         first_pixel = determine_first_nonempty_pixel(matrix)
         for hoa_concept in self.hoa_concepts:
             hoas = self.automata[hoa_concept]
@@ -73,12 +75,16 @@ class AutomataMemory:
                 prk = HOAPatRecKernel(hoa, matrix, first_pixel[0], first_pixel[1])
                 rec, _, visited_fields = prk.apply()
                 if rec and coverage(visited_fields, matrix):
-                    return True, hoa_concept
+                    sat.append((hoa_concept, hoa))
+                    if return_only_first:
+                        return sat
                 
-        return False, ""
+        return sat
     
 
-    def simple_concept_exists(self, matrix):
+    def retrieve_satisfiable_basic_concepts(self, matrix, return_only_first=False):
+        sat = []
+
         pg = PatternGraph(matrix)
         starts = pg.start_nodes
         for start in starts:
@@ -89,9 +95,11 @@ class AutomataMemory:
                     pkr = FSMPatRecKernel(fsm, matrix, x, y)
                     rec, _, visited_fields = pkr.apply()
                     if rec and coverage(visited_fields, matrix):
-                        return True, base_concept
+                        sat.append((base_concept, pkr))
+                        if return_only_first:
+                            return sat
                     
-        return False, ""
+        return sat
 
 
     def info(self):

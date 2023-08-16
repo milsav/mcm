@@ -522,7 +522,9 @@ def learn_simple_concept(pattern_matrix_file, verbose=False):
     return True, concept, mat, pg, fsms
 
 
-
+#
+# python3 Automaton.py -pat horizontal_line.pat vertical_line.pat left_angle.pat right_angle.pat t.pat -sc scene2.txt
+#
 if __name__ == "__main__":
     from Matrix import load_matrix, print_matrix, parse_field
     from SceneAnalyzer import IdentifyObjects

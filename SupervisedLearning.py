@@ -19,9 +19,11 @@ class SupervisedLearner:
 
     def learn_concept(self):
         if self.complex_concept:
-            ex, concept_name = self.automata_memory.hoa_concept_exists(self.pattern_matrix)
+            sat_concepts = self.automata_memory.retrieve_satisfiable_hoa_concepts(self.pattern_matrix)
+            ex = len(sat_concepts) > 0
+            
             if ex and self.verbose:
-                print("HOA for", self.concept, "already learnt as", concept_name)
+                print("HOA for", self.concept, "already learnt as", ",".join([sat[0] for sat in sat_concepts]))
             else:
                 ok, msg = learn_complex_concept(self.concept, self.pattern_matrix, self.automata_memory, self.verbose)
                 if self.verbose:
@@ -30,9 +32,11 @@ class SupervisedLearner:
                     else:
                         print("Learning HOA", self.concept, "failed: ", msg)        
         else:
-            ex, concept_name = self.automata_memory.simple_concept_exists(self.pattern_matrix)
+            sat_concepts = self.automata_memory.retrieve_satisfiable_basic_concepts(self.pattern_matrix)
+            ex = len(sat_concepts) > 0
+
             if ex and self.verbose:
-                print("FSMS for", self.concept, "already learnt as", concept_name)
+                print("FSMS for", self.concept, "already learnt as", ",".join([sat[0] for sat in sat_concepts]))
             else:
                 # learn HOA for a simple concept
                 ok, _ = learn_complex_concept(self.concept + "-AS-HOA", self.pattern_matrix, self.automata_memory, self.verbose)
@@ -51,6 +55,7 @@ class SupervisedLearner:
 
 if __name__ == "__main__":
     from AutomataMemory import AutomataMemory
+    from InferenceEngine import hoa_inference
     automata_memory = AutomataMemory()
 
     sl = SupervisedLearner('test_files/vertical_line.pat', automata_memory, verbose=False)
@@ -65,10 +70,12 @@ if __name__ == "__main__":
     sl = SupervisedLearner('test_files/square_cross.pat', automata_memory, verbose=False)
     sl.learn_concept()
 
-    sl = SupervisedLearner('test_files/left_angle.pat', automata_memory, verbose=False)
-    sl.learn_concept()
-
     print("\n\n\nAutomata memory")
     automata_memory.info()
+
+    print("\n\nRECOGNITION TEST")
+
+    scene_desc, scene_matrix = load_matrix('test_files/scene4.txt')
+    hoa_inference('test_files/scene4.txt', automata_memory)
     
 

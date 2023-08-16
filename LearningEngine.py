@@ -36,15 +36,20 @@ if __name__ == "__main__":
     from AutomataMemory import AutomataMemory
     from Matrix import load_matrix
     from InferenceEngine import hoa_inference
-    
+
     automata_memory = AutomataMemory()
 
-    le = LearningEngine(automata_memory)
+    le = LearningEngine(automata_memory, verbose=True)
     le.learn('test_files/vertical_line.pat')
     le.learn('test_files/horizontal_line.pat')
     le.learn('test_files/scene3.txt')
+    
+
+    print("\n\n\nLEARNING_SQUARE")
     le.learn('test_files/square.pat')
-    le.learn('test_files/square_cross.pat')
+    print("LEARNING SQUARE FINISHED")
+
+    #le.learn('test_files/square_cross.pat')
 
     print("\n\n\nAutomata memory")
     automata_memory.info()

@@ -30,13 +30,14 @@ class UnsupervisedLearner:
         for i in range(num_objects):
             mat = idobj.get_object_matrix(i)
             
-            concept_recognized, concept_name = self.automata_memory.hoa_concept_exists(mat)
-    
+            sat_concepts = self.automata_memory.retrieve_satisfiable_hoa_concepts(mat)
+            concept_recognized = len(sat_concepts) > 0
+
             if self.verbose:
                 print("\n")
                 print_matrix(mat)
                 if concept_recognized:
-                    print("Object", i, " recognized as", concept_name)
+                    print("Object", i, " recognized as: ", ",".join([sat[0] for sat in sat_concepts]))
                 else:
                     print("Object", i, " is not recognized by existing concepts")
 
