@@ -450,8 +450,9 @@ class HOAPatRecKernel:
             s_id = s.get_id()
             visited_nodes[s_id] = True
             move_type = graph.edges[start_node, s]["move_type"]
-            #print("BFS queue initialization -- ", move_type)
-            queue.append((s, 0, move_type))
+            if move_type != "NONE":
+                #print("BFS queue initialization -- ", s_id, move_type)
+                queue.append((s, 0, move_type))
 
         link_constraints_to_check = []
 
@@ -461,19 +462,24 @@ class HOAPatRecKernel:
             prev_visited_fields = self.visited_fields[prev_id]
             
             positions = self.determine_starting_position(prev_visited_fields, move_type, curr)
-            # print("Positions == ", positions)
+            #print("Positions == ", positions)
             num_positions = len(positions)
+            #print(num_positions)
 
             if num_positions != 1:
                 return False
             
             x, y = positions[0][0], positions[0][1]
-            # print("Applying automaton", curr_id, " at", x, y)
+            #print("Applying automaton", curr_id, " at", x, y)
             if self.on_table(x, y):
                 rec, t, visited_fields = self.apply_automaton(curr, x, y)
                 if not rec:
+                    #print("Automaton failed...")
                     return False
                 else:
+                    #print("Automaton passed...")
+                    #print("Visited fields:", visited_fields)
+                    
                     # mark the current node as visited
                     self.visited_fields[curr_id] = visited_fields
                     self.all_visisted_fields.extend(visited_fields)
@@ -489,11 +495,13 @@ class HOAPatRecKernel:
                         move_type = graph.edges[curr, s]["move_type"]
                         constraints = graph.edges[curr, s]["constraints"]
                         
+                        #print("Processing successor ", s_id, "--->", move_type)
+
                         if move_type != "NONE":
                             if not visited_nodes[s_id]:
                                 visited_nodes[s_id] = True
                                 queue.append((s, curr_id, move_type))
-                        
+                                
                         for c in constraints:
                             link_constraints_to_check.append((curr_id, s_id, c))
             else:

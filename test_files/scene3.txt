@@ -1,4 +1,4 @@
-Scene with 4 square-like objects
+Scene for unsupervised learning
 
     xxxxx
     x   

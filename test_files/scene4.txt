@@ -1,4 +1,4 @@
-Scene with 4 square-like objects (for testing purposes)
+Scene for testing purposes
 
     xxxxxxx
     x   
@@ -60,3 +60,4 @@ x   x           x      x
     x           x      x
     x           x      x
     xxxxxxxxxxxxxxxxxxxx
+ 
