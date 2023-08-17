@@ -4,58 +4,27 @@
 # 
 # Authors: {svc, lucy}@dmi.uns.ac.rs
 
-from Matrix import load_matrix, print_matrix
-from HOAutomaton import learn_complex_concept
-from Automaton import PatternGraph, FSMLearner
+from Matrix import load_matrix
+from BaseLearning import BaseLearner
 
 class SupervisedLearner:
     def __init__(self, pattern_file, automata_memory, verbose=False):
         self.verbose = verbose
         self.automata_memory = automata_memory
         self.concept, self.pattern_matrix = load_matrix(pattern_file) 
-        self.pattern_graph = PatternGraph(self.pattern_matrix)
-        self.complex_concept = not self.pattern_graph.is_concept_simple()
-
+        
 
     def learn_concept(self):
-        if self.complex_concept:
-            sat_concepts = self.automata_memory.retrieve_satisfiable_hoa_concepts(self.pattern_matrix)
-            ex = len(sat_concepts) > 0
-            
-            if ex:
-                if self.verbose:
-                    print("HOA for", self.concept, "already learnt as", ",".join([sat[0] for sat in sat_concepts]))
+        learner = BaseLearner(self.automata_memory, self.pattern_matrix, self.verbose)
+        learner.check_concept()
 
-                self.handle_learnt_concept(sat_concepts, False)
-            else:
-                ok, msg = learn_complex_concept(self.concept, self.pattern_matrix, self.automata_memory, self.verbose)
-                if self.verbose:
-                    if ok:
-                        print("HOA Concept", self.concept, "learnt succesfully")
-                    else:
-                        print("Learning HOA", self.concept, "failed: ", msg)        
-        else:
-            sat_concepts = self.automata_memory.retrieve_satisfiable_basic_concepts(self.pattern_matrix)
-            ex = len(sat_concepts) > 0
+        if learner.concept_recognized:
+            self.handle_learnt_concept(learner.sat_concepts, learner.base_concept_recognized)
+            return
+        
+        learner.learn_concept(self.concept, False)
 
-            if ex:
-                if self.verbose:
-                    print("FSMS for", self.concept, "already learnt as", ",".join([sat[0] for sat in sat_concepts]))
-            
-                self.handle_learnt_concept(sat_concepts, True)
-            else:
-                # learn HOA for a simple concept
-                ok, _ = learn_complex_concept(self.concept + "-AS-HOA", self.pattern_matrix, self.automata_memory, self.verbose)
-                if ok and self.verbose:
-                    print("Concept", self.concept, " learned as HOA")
-
-                # learn FSM for a simple concept
-                start_nodes = self.pattern_graph.start_nodes
-                fsms = [FSMLearner(self.pattern_graph, sn).learn() for sn in start_nodes]
-                self.automata_memory.add_automata_to_memory(self.concept, True, fsms, self.pattern_matrix)
-                if self.verbose:
-                    print("Concept", self.concept, "learned as simple")
-
+        
 
     def handle_learnt_concept(self, sat_concepts, base_concept):
         # reconfigure automata memory when supervised concept matches an unsupervised concept

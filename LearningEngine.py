@@ -44,10 +44,10 @@ if __name__ == "__main__":
     le.learn('test_files/horizontal_line.pat')
     #le.learn('test_files/left_angle.pat')
     #le.learn('test_files/right_angle.pat')
-    le.learn('test_files/square.pat')
-    #le.learn('test_files/scene-rect.txt')
     #le.learn('test_files/square.pat')
-    #le.learn('test_files/rect.pat')
+    le.learn('test_files/scene-rect.txt')
+    #le.learn('test_files/square.pat')
+    le.learn('test_files/rect.pat')
     #le.learn('test_files/square_cross.pat')
     
 

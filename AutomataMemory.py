@@ -86,6 +86,7 @@ class AutomataMemory:
 
     def retrieve_satisfiable_hoa_concepts(self, matrix, return_only_first=False):
         sat = []
+        #self.partially_activated_hoa = []
         
         first_pixel = determine_first_nonempty_pixel(matrix)
         for hoa_concept in self.hoa_concepts:

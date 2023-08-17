@@ -4,14 +4,14 @@
 #
 # Authors: {svc, lucy}@dmi.uns.ac.rs
 
-from Matrix import load_matrix, print_matrix, determine_first_nonempty_pixel
+from Matrix import load_matrix, print_matrix, determine_first_nonempty_pixel, coverage
 from SceneAnalyzer import IdentifyObjects
 from HOAutomaton import HOAPatRecKernel
 
 def hoa_inference(scene_file, automata_memory, show_activation_history=False):
     scene_desc, scene_matrix = load_matrix(scene_file)
     print(scene_desc, " LOADED")
-    print_matrix(scene_matrix)
+    #print_matrix(scene_matrix)
 
     idobj = IdentifyObjects(scene_matrix)
     num_objects = idobj.num_objects()
@@ -26,11 +26,11 @@ def hoa_inference(scene_file, automata_memory, show_activation_history=False):
                 pos = determine_first_nonempty_pixel(mat)
                 #print("Trying", hoa_concept, "at", pos)
                 prk = HOAPatRecKernel(hoa, mat, pos[0], pos[1])
-                rec, _, _ = prk.apply()
+                rec, _, visited_fields = prk.apply()
                 ac_score = prk.activation_score()
 
                 if show_activation_history:
                     prk.print_activation_history()
                     
-                recognized = "YES" if rec else "no"
+                recognized = "YES" if rec and coverage(visited_fields, mat) else "no"
                 print(hoa_concept, "score = ", ac_score, recognized)
