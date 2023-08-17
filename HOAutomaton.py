@@ -227,6 +227,7 @@ class HOALearner:
 
     """
     identify complex concepts that can be recognized by existing HOAs
+    TODO: more than one HOA can be activated, strategies to select the best HOA 
     """    
     def identify_complex_concepts(self, i, j, complex_concepts, visited_fields):
         # identify complex concepts (HOAs)

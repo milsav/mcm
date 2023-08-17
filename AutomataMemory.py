@@ -36,11 +36,14 @@ class AutomataMemory:
             self.hoa_concepts.add(concept)
 
         # check if the concept is unknown (unsupervised learning)
-        if concept.startswith("UNKNOWN-"):
+        if self.is_unsupervised_concept(concept):
             if base_concept:
                 self.unknown_base_concepts.add(concept)
             else:
                 self.unknown_hoa_concepts.add(concept)
+
+        concept_type = "base" if base_concept else "complex"
+        print('[AutomataMemory] new ' + concept_type + ' concept ' + concept + ' learnt')
 
 
     def get_base_concepts(self):
@@ -75,6 +78,10 @@ class AutomataMemory:
         concept_type = "FSM" if base_concept else "HOA"
         num = len(self.unknown_base_concepts) if base_concept else len(self.unknown_hoa_concepts)
         return "UNKNOWN-" + concept_type + "-" + str(num)
+
+
+    def is_unsupervised_concept(self, concept):
+        return concept.startswith("UNKNOWN-")
 
 
     def retrieve_satisfiable_hoa_concepts(self, matrix, return_only_first=False):
@@ -132,6 +139,28 @@ class AutomataMemory:
                 a.print()
                 print()
 
+
+    #
+    # automata memory reconfiguration routines
+    # 
+    def reconfigure_unsupervised_concept(self, unsupervised_name, base_concept, supervised_name, supervised_pattern):
+        automata = self.automata.pop(unsupervised_name)
+
+        unsupervised_pattern = self.patterns[unsupervised_name]
+        self.automata[supervised_name] = automata
+        self.patterns[supervised_name] = unsupervised_pattern + [supervised_pattern]
+
+        if base_concept:
+            self.base_concepts.remove(unsupervised_name)
+            self.base_concepts.add(supervised_name)
+            self.unknown_base_concepts.remove(unsupervised_name)
+        else:
+            self.hoa_concepts.remove(unsupervised_name)
+            self.hoa_concepts.add(supervised_name)
+            self.unknown_hoa_concepts.remove(unsupervised_name)
+
+        print("[AutomataMemory] unsupervised concept " + unsupervised_name + " reconfigured to " + supervised_name)
+        
 
 
 if __name__ == "__main__":
