@@ -448,13 +448,12 @@ class HOAPatRecKernel:
         succs = graph.successors(start_node)
         for s in succs:
             s_id = s.get_id()
-            visited_nodes[s_id] = True
             move_type = graph.edges[start_node, s]["move_type"]
             if move_type != "NONE":
                 #print("BFS queue initialization -- ", s_id, move_type)
+                visited_nodes[s_id] = True
                 queue.append((s, 0, move_type))
 
-        link_constraints_to_check = []
 
         while len(queue) > 0:
             curr, prev_id, move_type = queue.popleft()
@@ -462,14 +461,15 @@ class HOAPatRecKernel:
             prev_visited_fields = self.visited_fields[prev_id]
             
             positions = self.determine_starting_position(prev_visited_fields, move_type, curr)
-            #print("Positions == ", positions)
             num_positions = len(positions)
+            #print("Positions == ", positions)
             #print(num_positions)
 
             if num_positions != 1:
                 return False
             
             x, y = positions[0][0], positions[0][1]
+            
             #print("Applying automaton", curr_id, " at", x, y)
             if self.on_table(x, y):
                 rec, t, visited_fields = self.apply_automaton(curr, x, y)
@@ -493,7 +493,6 @@ class HOAPatRecKernel:
                     for s in succs:
                         s_id = s.get_id()
                         move_type = graph.edges[curr, s]["move_type"]
-                        constraints = graph.edges[curr, s]["constraints"]
                         
                         #print("Processing successor ", s_id, "--->", move_type)
 
@@ -501,9 +500,6 @@ class HOAPatRecKernel:
                             if not visited_nodes[s_id]:
                                 visited_nodes[s_id] = True
                                 queue.append((s, curr_id, move_type))
-                                
-                        for c in constraints:
-                            link_constraints_to_check.append((curr_id, s_id, c))
             else:
                 return False
 
@@ -512,12 +508,13 @@ class HOAPatRecKernel:
         
         # print("Checking link constraints")
         link_constraints_ok = True
-        for cc in link_constraints_to_check:
+        for cc in self.hoa.link_constraints:
             if not self.check_link_constraint(cc[0], cc[1], cc[2]):
                 link_constraints_ok = False
             else:
                 self.link_constraints_satisfied.append(cc)
-            
+
+
         return time_constraints_ok and link_constraints_ok
 
 
@@ -573,6 +570,10 @@ class HOAPatRecKernel:
 
 
     def check_link_constraint(self, auto_i, auto_j, constraint):
+        #print("Checking: ", auto_i, auto_j, constraint)
+        #print(self.visited_fields[auto_i])
+        #print(self.visited_fields[auto_j])
+        
         vf_i = self.visited_fields[auto_i]
         vf_j = self.visited_fields[auto_j]
         
@@ -639,9 +640,17 @@ class HOAPatRecKernel:
         print("# link constraints passed", len(self.link_constraints_satisfied), "# total constraints = ", total_link_constraints)
         for c in self.link_constraints_satisfied:
             print(c)
+
+
+    def activation_score(self, activated_nodes_factor=0.7, link_constraints_factor=0.2, time_constraints_factor=0.1):
+        f_an = len(self.activated_nodes) / self.hoa.num_nodes        
+        f_tc = self.ac_divide(len(self.time_constraints_satisfied), len(self.hoa.get_identical_at()) + len(self.hoa.get_semi_identical_at()))
+        f_lc = self.ac_divide(len(self.link_constraints_satisfied), len(self.hoa.get_link_constraints())) 
+        return f_an * activated_nodes_factor + f_tc * time_constraints_factor + f_lc * link_constraints_factor
         
 
-
+    def ac_divide(self, a, b):
+        return 1 if b == 0 else a / b
 
 
 def learn_complex_concept(concept, matrix, automata_memory, verbose=False):

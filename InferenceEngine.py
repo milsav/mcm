@@ -24,13 +24,13 @@ def hoa_inference(scene_file, automata_memory, show_activation_history=False):
             hoas = automata_memory.get_automata(hoa_concept)
             for hoa in hoas:
                 pos = determine_first_nonempty_pixel(mat)
-                print("Trying", hoa_concept, "at", pos)
+                #print("Trying", hoa_concept, "at", pos)
                 prk = HOAPatRecKernel(hoa, mat, pos[0], pos[1])
-                rec, at, visited_fields = prk.apply()
-            
+                rec, _, _ = prk.apply()
+                ac_score = prk.activation_score()
+
                 if show_activation_history:
                     prk.print_activation_history()
                     
-                if rec:
-                    print("=================> ", hoa_concept, " recognized, activation time", at)
-                    print(visited_fields)
+                recognized = "YES" if rec else "no"
+                print(hoa_concept, "score = ", ac_score, recognized)

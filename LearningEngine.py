@@ -54,5 +54,5 @@ if __name__ == "__main__":
     print("\n\nRECOGNITION TEST")
 
     scene_desc, scene_matrix = load_matrix('test_files/scene4.txt')
-    hoa_inference('test_files/scene4.txt', automata_memory)
+    hoa_inference('test_files/scene4.txt', automata_memory, show_activation_history=False)
     
