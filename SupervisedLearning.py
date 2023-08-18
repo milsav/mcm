@@ -15,7 +15,7 @@ class SupervisedLearner:
         
 
     def learn_concept(self):
-        learner = BaseLearner(self.automata_memory, self.pattern_matrix, self.verbose)
+        learner = BaseLearner(self.automata_memory, self.pattern_matrix, verbose=self.verbose)
         learner.check_concept()
 
         if learner.concept_recognized:

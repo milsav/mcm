@@ -41,13 +41,13 @@ class BaseLearner:
         if unsupervised:
             concept_id = self.automata_memory.get_concept_id_for_unknown(False)
         
-        passed, _ = learn_complex_concept(concept_id, self.mat, self.automata_memory, self.verbose)
+        passed, _ = learn_complex_concept(concept_id, self.mat, self.automata_memory, verbose=self.verbose)
         if passed:
             self.concept_similarity_analysis(concept_id)
             return
 
         # if a complex concept cannot be learnt then try to learn a simple concept
-        passed, _, fsms = learn_simple_concept_from_matrix(self.mat, self.verbose)
+        passed, _, fsms = learn_simple_concept_from_matrix(self.mat, verbose=self.verbose)
         if passed:
             if unsupervised:
                 concept_id = self.automata_memory.get_concept_id_for_unknown(True)

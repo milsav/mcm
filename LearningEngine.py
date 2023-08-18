@@ -15,6 +15,7 @@ class LearningEngine:
 
 
     def learn(self, input_file):
+        print("Activated learning for", input_file)
         supervised_learning = True if input_file.endswith('.pat') else False
         if supervised_learning:
             self.slearn(input_file)
@@ -50,7 +51,6 @@ if __name__ == "__main__":
     le.learn('test_files/rect.pat')
     le.learn('test_files/square_cross.pat')
     le.learn('test_files/triangle.pat')
-    
 
     print("Learning finished")
 

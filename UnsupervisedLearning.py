@@ -31,7 +31,7 @@ class UnsupervisedLearner:
         for i in range(num_objects):
             mat = idobj.get_object_matrix(i)
             
-            learner = BaseLearner(self.automata_memory, mat, self.verbose)
+            learner = BaseLearner(self.automata_memory, mat, verbose=self.verbose)
             learner.check_concept()
             if not learner.concept_recognized:
                 learner.learn_concept(None, True)

@@ -146,19 +146,20 @@ class HOA:
 Class for learning HOA graphs
 """
 class HOALearner:
-    def __init__(self, concept, matrix, automata_memory, verbose=False):
+    def __init__(self, concept, matrix, automata_memory, exclude_concepts=[], verbose=False):
         idobj = IdentifyObjects(matrix)
         if idobj.num_objects() != 1:
             raise Exception("[ERROR, HOALearner] matrix contains multiple objects")
 
         self.concept = concept
         self.matrix = matrix
-        #self.dim_x = len(matrix)
-        #self.dim_y = len(matrix[0])
         self.verbose = verbose
         self.hoa = HOA(concept)
 
         self.automata_memory = automata_memory
+
+        # complex concepts that have to be excluded when learning this particular HOA
+        self.exclude_concepts = exclude_concepts
 
 
     #
@@ -175,12 +176,9 @@ class HOALearner:
         complex_concepts = self.automata_memory.get_hoa_concepts()
 
         bfs_order = self.bfs_traversal()
-        
-        #for i in range(self.dim_x):
-        #    for j in range(self.dim_y):
         for start_field in bfs_order:
-            # start_field = str(i) + "-" + str(j)
             i, j = parse_field(start_field)
+            
             if self.matrix[i][j] != ' ' and start_field not in visited_fields:
                 hoa_activated = self.identify_complex_concepts(i, j, complex_concepts, visited_fields)
                 if not hoa_activated:
@@ -233,7 +231,13 @@ class HOALearner:
         activated = []
         
         for concept in complex_concepts:
+            # skip excluded concepts
+            if concept in self.exclude_concepts:
+                print("Excluding: ", concept)
+                continue
+
             for hoa in self.automata_memory.get_automata(concept):
+                # apply pattern recognition for current HOA
                 prk = HOAPatRecKernel(hoa, self.matrix, i, j)
                 rec, t, visited = prk.apply()
             
@@ -243,12 +247,8 @@ class HOALearner:
                     
                     activated.append([concept, hoa, "HOA", visited, t])
 
-                    #for v in visited:
-                    #    visited_fields.add(v)
-                    
-                    #self.activated_automata.append([concept, hoa, "HOA", visited, t])
-                    #return True
 
+        # select one of activated HOAS
         if len(activated) > 0:
             activated.sort(reverse=True, key=lambda x: x[4])
             selected = activated[0]
@@ -679,7 +679,7 @@ class HOAPatRecKernel:
 
 def learn_complex_concept(concept, matrix, automata_memory, verbose=False):
     try:
-        hoal = HOALearner(concept, matrix, automata_memory, verbose)
+        hoal = HOALearner(concept, matrix, automata_memory, verbose=verbose)
         hoa = hoal.learn()
         if verbose:
             hoa.print() 
