@@ -22,6 +22,8 @@ class BaseLearner:
     #
     def check_concept(self):
         self.sat_concepts = self.automata_memory.retrieve_satisfiable_hoa_concepts(self.mat)
+        self.partially_activated_concepts = self.automata_memory.retrieve_partially_activated_concepts()
+        
         self.complex_concept_recognized = len(self.sat_concepts) > 0
         if not self.complex_concept_recognized:
             self.sat_concepts = self.automata_memory.retrieve_satisfiable_basic_concepts(self.mat)
@@ -41,6 +43,7 @@ class BaseLearner:
         
         passed, _ = learn_complex_concept(concept_id, self.mat, self.automata_memory, self.verbose)
         if passed:
+            self.concept_similarity_analysis(concept_id)
             return
 
         # if a complex concept cannot be learnt then try to learn a simple concept
@@ -51,4 +54,13 @@ class BaseLearner:
             
             self.automata_memory.add_automata_to_memory(concept_id, True, fsms, self.mat)
                         
-                        
+
+
+    #
+    # Concept similarity analysis
+    #                    
+    def concept_similarity_analysis(self, concept_id):
+        print("concept similarity analysis for", concept_id)
+        print("#similar concepts = ", len(self.partially_activated_concepts))
+        for pc in self.partially_activated_concepts:
+            print(pc[0], pc[3]) 

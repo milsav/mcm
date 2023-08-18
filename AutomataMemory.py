@@ -18,6 +18,8 @@ class AutomataMemory:
         self.unknown_base_concepts = set()
         self.unknown_hoa_concepts = set()
 
+        self.partially_activated_hoa = []
+
 
     """
     concept - string, automata -- list of automata
@@ -84,9 +86,14 @@ class AutomataMemory:
         return concept.startswith("UNKNOWN-")
 
 
+    """
+    svc: this function also forms the list of partially activated HOAs 
+         (in that case return_only_first must be set to True)
+    """
     def retrieve_satisfiable_hoa_concepts(self, matrix, return_only_first=False):
         sat = []
-        #self.partially_activated_hoa = []
+       
+        self.partially_activated_hoa.clear()
         
         first_pixel = determine_first_nonempty_pixel(matrix)
         for hoa_concept in self.hoa_concepts:
@@ -94,6 +101,11 @@ class AutomataMemory:
             for hoa in hoas:
                 prk = HOAPatRecKernel(hoa, matrix, first_pixel[0], first_pixel[1])
                 rec, _, visited_fields = prk.apply()
+
+                ac_score = prk.activation_score()
+                if ac_score > 0:
+                    self.partially_activated_hoa.append((hoa_concept, hoa, prk, ac_score))
+
                 if rec and coverage(visited_fields, matrix):
                     sat.append((hoa_concept, hoa))
                     if return_only_first:
@@ -101,6 +113,10 @@ class AutomataMemory:
                 
         return sat
     
+
+    def retrieve_partially_activated_concepts(self):
+        return self.partially_activated_hoa
+
 
     def retrieve_satisfiable_basic_concepts(self, matrix, return_only_first=False):
         sat = []

@@ -226,24 +226,39 @@ class HOALearner:
 
 
     """
-    identify complex concepts that can be recognized by existing HOAs
-    TODO: more than one HOA can be activated, strategies to select the best HOA 
+    identify complex concepts that can be recognized by existing HOAs 
     """    
     def identify_complex_concepts(self, i, j, complex_concepts, visited_fields):
         # identify complex concepts (HOAs)
+        activated = []
+        
         for concept in complex_concepts:
             for hoa in self.automata_memory.get_automata(concept):
                 prk = HOAPatRecKernel(hoa, self.matrix, i, j)
                 rec, t, visited = prk.apply()
+            
                 if rec:
                     if self.verbose:
                         print("Activation [complex] ", visited, ", HOA: ", concept)
                     
-                    for v in visited:
-                        visited_fields.add(v)
+                    activated.append([concept, hoa, "HOA", visited, t])
+
+                    #for v in visited:
+                    #    visited_fields.add(v)
                     
-                    self.activated_automata.append([concept, hoa, "HOA", visited, t])
-                    return True
+                    #self.activated_automata.append([concept, hoa, "HOA", visited, t])
+                    #return True
+
+        if len(activated) > 0:
+            activated.sort(reverse=True, key=lambda x: x[4])
+            selected = activated[0]
+            
+            visited = selected[3]
+            for v in visited:
+                visited_fields.add(v)
+
+            self.activated_automata.append(selected)
+            return True
 
         return False 
     
@@ -466,11 +481,19 @@ class HOAPatRecKernel:
             #print("Positions == ", positions)
             #print(num_positions)
 
+            if num_positions == 0:
+                return False
+            
+            x, y = positions[-1][0], positions[-1][1]
+
+
+            """
             if num_positions != 1:
                 return False
             
             x, y = positions[0][0], positions[0][1]
-            
+            """
+
             #print("Applying automaton", curr_id, " at", x, y)
             if self.on_table(x, y):
                 rec, t, visited_fields = self.apply_automaton(curr, x, y)

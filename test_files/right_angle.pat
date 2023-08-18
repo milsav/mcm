@@ -1,7 +1,11 @@
 right angle
 
-      x  
+  xxxxx      
       x       
       x       
-      x       
-  xxxxx                  
+      x
+      x
+      x
+      x
+      x
+      x                         

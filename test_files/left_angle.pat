@@ -1,7 +1,9 @@
 left angle
 
-  xxxxx  
+  xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx  
   x       
   x       
   x       
+  x
+  x
   x                 
