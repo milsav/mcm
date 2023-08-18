@@ -63,6 +63,7 @@ class HOA:
         self.link_constraints = []
         self.identical_at = []
         self.semi_identical_at = []
+        self.HOA_dependencies = []
     
     
     def add_node(self, concept, automaton, automaton_type, activation_time):
@@ -71,6 +72,9 @@ class HOA:
         n = HOANode(node_id, concept, automaton, automaton_type, activation_time)
         self.nodes.append(n)
         self.G.add_node(n)
+
+        if automaton_type == "HOA":
+            self.HOA_dependencies.append(concept)
         
     
     def add_link(self, src_index, dst_index, move_type, constraints):
@@ -99,6 +103,13 @@ class HOA:
             print(x[0], x[1], " identical activation time")
         for x in self.semi_identical_at:
             print(x[0], x[1], " semiidentical activation time")
+
+        print("-- HOA dependencies")
+        if len(self.HOA_dependencies) == 0:
+            print("none")
+        else:
+            for d in self.HOA_dependencies:
+                print(d)
     
 
     def connected(self):
@@ -137,6 +148,23 @@ class HOA:
 
     def get_link_constraints(self):
         return self.link_constraints
+    
+
+    def bfs(self):
+        ret = []
+        for l in nx.bfs_edges(self.G, self.nodes[0]):
+            src, dst = l[0], l[1]
+            if src not in ret:
+                ret.append(src)
+            if dst not in ret:
+                ret.append(dst)
+
+        return [n.concept for n in ret]
+    
+
+    def bfs_links(self):
+        ord = nx.bfs_edges(self.G, self.nodes[0])
+        return [l[0].concept + "--" + l[1].concept for l in ord]
                 
 
 
