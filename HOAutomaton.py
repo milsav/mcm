@@ -95,14 +95,20 @@ class HOA:
             print(src.get_id(), "-->", dst.get_id(), "move = ", self.G.edges[l]["move_type"], " constraints = ", self.G.edges[l]["constraints"])
 
         print("-- link constraints")
-        for lc in self.link_constraints:
-            print(lc)
+        if len(self.link_constraints) == 0:
+            print("none")
+        else:
+            for lc in self.link_constraints:
+                print(lc)
 
         print("-- activation time constraints")
-        for x in self.identical_at:
-            print(x[0], x[1], " identical activation time")
-        for x in self.semi_identical_at:
-            print(x[0], x[1], " semiidentical activation time")
+        if len(self.identical_at) == 0 and len(self.semi_identical_at) == 0:
+            print("none")
+        else:
+            for x in self.identical_at:
+                print(x[0], x[1], " identical activation time")
+            for x in self.semi_identical_at:
+                print(x[0], x[1], " semiidentical activation time")
 
         print("-- HOA dependencies")
         if len(self.HOA_dependencies) == 0:
@@ -164,9 +170,11 @@ class HOA:
 
     def bfs_links(self):
         ord = nx.bfs_edges(self.G, self.nodes[0])
-        return [l[0].concept + "--" + l[1].concept for l in ord]
+        return [l[0].concept + "--" + l[1].concept + "--" + self.G.edges[l]["move_type"] for l in ord]
                 
 
+    def get_concept_dependencies(self):
+        return self.HOA_dependencies
 
 
 

@@ -7,6 +7,128 @@
 from Matrix import determine_first_nonempty_pixel, parse_field, coverage, print_matrix
 from HOAutomaton import HOAPatRecKernel
 from Automaton import FSMPatRecKernel, PatternGraph
+from HOAComparator import HOAComparator
+
+import networkx as nx
+
+"""
+Directed graphs for HOA relationships
+"""
+class HOADirectedGraph:
+    def __init__(self):
+        self.G = nx.DiGraph()
+
+
+    def add_link(self, concept1, concept2):
+        if not self.G.has_node(concept1):
+            self.G.add_node(concept1)
+        
+        if not self.G.has_node(concept2):
+            self.G.add_node(concept2)
+
+        self.G.add_edge(concept1, concept2)
+
+    
+    def empty(self):
+        return len(self.G.nodes()) == 0
+
+
+    def info(self, graph_name):
+        if self.empty():
+            print("Empty", graph_name)
+            return
+        
+        print(graph_name)
+        print("Nodes: ", self.G.nodes())
+        print("Links: ", self.G.edges())
+
+
+    def reconfigure(self, old_concept_name, new_concept_name):
+        if not self.G.has_node(old_concept_name):
+            #print("[HOADirectedGraph, warning] reconfiguration attempt for non-existing node", old_concept_name)
+            return
+
+        succ = self.G.successors(old_concept_name)
+        pred = self.G.predecessors(old_concept_name)
+        
+        self.G.remove_node(old_concept_name)
+        self.G.add_node(new_concept_name)
+
+        for s in succ:
+            self.G.add_edge(new_concept_name, s)
+
+        for p in pred:
+            self.G.add_edge(p, new_concept_name)
+
+
+"""
+HOA inheritance tree
+"""
+class HOAInheritanceTree(HOADirectedGraph):
+    def __init__(self):
+        super().__init__()
+
+
+    def info(self):
+        super().info("HOA inheritance tree")
+
+
+
+"""
+HOA dependency network
+"""
+class HOADependencyNet(HOADirectedGraph):
+    def __init__(self):
+        super().__init__()
+
+
+    def info(self):
+        super().info("HOA dependency network")
+
+
+
+"""
+HOA similarity network
+"""
+class HOASimilarityNet:
+    def __init__(self):
+        self.G = nx.Graph()
+
+
+    def add_link(self, concept1, concept2, similarity):
+        if not self.G.has_node(concept1):
+            self.G.add_node(concept1)
+        
+        if not self.G.has_node(concept2):
+            self.G.add_node(concept2)
+
+        self.G.add_edge(concept1, concept2, similarity=similarity)
+
+
+    def info(self):
+        if len(self.G.nodes()) == 0:
+            print("Empty HOA similarity network")
+            return
+        
+        print("HOA similarity network")
+        links = self.G.edges()
+        for l in links:
+            print(l[0], l[1], self.G.edges[l]["similarity"])
+
+
+    def reconfigure(self, old_concept_name, new_concept_name):
+        if not self.G.has_node(old_concept_name):
+            return
+
+        self.G.add_node(new_concept_name)
+        
+        neis = self.G.neighbors(old_concept_name)
+        for nei in neis:
+            w = self.G.edges[old_concept_name, nei]["similarity"]
+            self.G.add_edge(new_concept_name, nei, similarity=w)
+
+        self.G.remove_node(old_concept_name)
+
 
 class AutomataMemory:
     def __init__(self):
@@ -19,6 +141,10 @@ class AutomataMemory:
         self.unknown_hoa_concepts = set()
 
         self.partially_activated_hoa = []
+
+        self.inheritance_tree = HOAInheritanceTree()
+        self.dependency_net = HOADependencyNet()
+        self.similarity_net = HOASimilarityNet()
 
 
     """
@@ -43,6 +169,17 @@ class AutomataMemory:
                 self.unknown_base_concepts.add(concept)
             else:
                 self.unknown_hoa_concepts.add(concept)
+
+        # update dependency net
+        if not base_concept:
+            dep_concepts = []
+            for a in automata:
+                dep_concepts.extend(a.get_concept_dependencies())
+            for d in dep_concepts:
+                self.dependency_net.add_link(concept, d)
+
+            # update inheritance tree and similarity net
+            self.hoa_similarity_analysis(concept, automata)
 
         concept_type = "base" if base_concept else "complex"
         print('[AutomataMemory] new ' + concept_type + ' concept ' + concept + ' learnt')
@@ -138,11 +275,34 @@ class AutomataMemory:
         return sat
 
 
+    def hoa_similarity_analysis(self, concept, automata):
+        current_HOA = automata[0]
+        
+        for hc in self.hoa_concepts:
+            if hc == concept:
+                continue
+
+            prev_HOA = self.automata[hc][0]
+            cmp = HOAComparator(current_HOA, prev_HOA)
+            similarity = cmp.get_similarity()
+            if similarity > 0:
+                self.similarity_net.add_link(concept, hc, similarity)
+            
+            sub, father, son = cmp.is_subconcept()
+            if sub:
+                self.inheritance_tree.add_link(son, father)
+
+
+
+
     def info(self):
         if len(self.automata) == 0:
             print("Empty automata memory")
             return
         
+        print("Base/FSM    concepts = ", self.base_concepts)
+        print("Complex/HOA concepts = ", self.hoa_concepts)
+
         for c in self.automata:
             print("Concept", c)
             print("Pattern")
@@ -155,6 +315,10 @@ class AutomataMemory:
                 cnt += 1
                 a.print()
                 print()
+
+        self.inheritance_tree.info()
+        self.dependency_net.info()
+        self.similarity_net.info()
 
 
     #
@@ -176,10 +340,15 @@ class AutomataMemory:
             self.hoa_concepts.add(supervised_name)
             self.unknown_hoa_concepts.remove(unsupervised_name)
 
+            # reconfigure HOA networks
+            self.dependency_net.reconfigure(unsupervised_name, supervised_name)
+            self.inheritance_tree.reconfigure(unsupervised_name, supervised_name)
+            self.similarity_net.reconfigure(unsupervised_name, supervised_name)
+
         print("[AutomataMemory] unsupervised concept " + unsupervised_name + " reconfigured to " + supervised_name)
         
 
-
+"""
 if __name__ == "__main__":
     automata_memory = AutomataMemory()
 
@@ -206,7 +375,7 @@ if __name__ == "__main__":
 
     automata_memory.info()
 
-"""    
+  
 #
 # Class implementing long-term memory for holding base automata
 # 
