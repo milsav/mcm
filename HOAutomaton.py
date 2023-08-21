@@ -16,6 +16,7 @@ from Automaton import FSMPatRecKernel, PatternGraph
 from Matrix import neigh, parse_field, dx, dy, coverage
 from Matrix import link_type as LT_ARRAY
 from SceneAnalyzer import IdentifyObjects
+from HOAComparator import HOAComplexityComparator
 
 
 """
@@ -314,11 +315,20 @@ class HOALearner:
                 while num_ties < total_activated and activated[0][4] == activated[num_ties][4]:
                     num_ties += 1
 
-                print("#TIES ", num_ties, " [TODO: to finish tie resolution]")
-                for i in range(num_ties):
-                    print(activated[i][0])
-
+                # print("#TIES ", num_ties)
+                # for i in range(num_ties):
+                #    print(activated[i][0])
                 
+                the_best = 0
+                for curr in range(1, num_ties):
+                    hoa_a, hoa_b = activated[the_best][1], activated[curr][1]
+                    hcc = HOAComplexityComparator(hoa_a, hoa_b)
+                    cmp = hcc.compare()
+                    if cmp < 0:
+                        the_best = curr
+
+                selected = activated[the_best]
+                # print("Selected HOA", activated[the_best][0])
 
             visited = selected[3]
             for v in visited:
