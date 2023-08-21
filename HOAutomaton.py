@@ -361,14 +361,13 @@ class HOALearner:
                     if valid_activation:
                         if self.verbose:
                             print("Activation [simple] ", visited, ", FSM: ", concept)
+                        
                         for v in visited:
                             visited_fields.add(v)
                         
                         self.activated_automata.append([concept, automaton, "FSM", visited, t])
-                        break   
-
-        # TODO: multiple FSMS could be activated, select the longest (similarly as for HOAs)   
-
+                        break
+                         
 
     """
     identify dependencies between activated automata (links in HOA graphs)
