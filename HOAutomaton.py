@@ -116,6 +116,8 @@ class HOA:
         else:
             for d in self.HOA_dependencies:
                 print(d)
+
+        print("-- TOTAL FSMS involved:", self.total_FSMS())
     
 
     def connected(self):
@@ -175,6 +177,20 @@ class HOA:
 
     def get_concept_dependencies(self):
         return self.HOA_dependencies
+
+
+    def total_FSMS(self):
+        fsms_counter = 0
+        nodes = self.G.nodes()
+        for n in nodes:
+            if n.get_automaton_type() == "HOA":
+                n_automaton = n.get_automaton()
+                fsms_counter += n_automaton.total_FSMS()
+            else:
+                fsms_counter += 1 
+        
+        return fsms_counter
+
 
 
 
@@ -285,10 +301,25 @@ class HOALearner:
 
 
         # select one of activated HOAS
-        if len(activated) > 0:
-            activated.sort(reverse=True, key=lambda x: x[4])
+        total_activated = len(activated)
+        if total_activated > 0:
+            if total_activated > 1:
+                activated.sort(reverse=True, key=lambda x: x[4])
+            
             selected = activated[0]
             
+            if total_activated > 1 and activated[0][4] == activated[1][4]:
+                # tie resolution
+                num_ties = 1                
+                while num_ties < total_activated and activated[0][4] == activated[num_ties][4]:
+                    num_ties += 1
+
+                print("#TIES ", num_ties, " [TODO: to finish tie resolution]")
+                for i in range(num_ties):
+                    print(activated[i][0])
+
+                
+
             visited = selected[3]
             for v in visited:
                 visited_fields.add(v)
@@ -324,7 +355,9 @@ class HOALearner:
                             visited_fields.add(v)
                         
                         self.activated_automata.append([concept, automaton, "FSM", visited, t])
-                        break      
+                        break   
+
+        # TODO: multiple FSMS could be activated, select the longest (similarly as for HOAs)   
 
 
     """

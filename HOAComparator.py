@@ -5,6 +5,50 @@
 # Authors: {svc, lucy}@dmi.uns.ac.rs
 
 
+class HOAComplexityComparator:
+    def __init__(self, hoa_a, hoa_b):
+        self.hoa_a = hoa_a
+        self.hoa_b = hoa_b
+        
+
+    def compare(self):
+        # num FSMS involved
+        nodes_a, nodes_b = self.hoa_a.total_FSMS(), self.hoa_b.total_FSMS()
+        if nodes_a < nodes_b:
+            return -1
+        elif nodes_a > nodes_b:
+            return 1
+        
+        # num links
+        links_a, links_b = self.hoa_a.G.number_of_edges(), self.hoa_b.G.number_of_edges()
+        if links_a < links_b:
+            return -1
+        elif links_a > links_b:
+            return 1
+        
+        # num link constraints
+        cons_a, cons_b = len(self.hoa_a.link_constraints), len(self.hoa_b.link_constraints) 
+        if cons_a < cons_b:
+            return -1
+        elif cons_a > cons_b:
+            return 1
+        
+        # num activation time constraints
+        at_a, at_b = len(self.hoa_a.identical_at), len(self.hoa_b.identical_at)
+        if at_a < at_b:
+            return -1
+        elif at_a > at_b:
+            return 1
+        
+        at_a, at_b = len(self.hoa_a.semi_identical_at), len(self.hoa_b.semi_identical_at)
+        if at_a < at_b:
+            return -1
+        elif at_a > at_b:
+            return 1
+        
+        return 0
+
+
 def longest_common_subsequence(lst1, lst2):
     m, n = len(lst1), len(lst2)
     jh = [[0 for j in range(n + 1)] for i in range(m + 1)]
@@ -166,4 +210,20 @@ if __name__ == "__main__":
     hcmp = HOAComparator(hoa_squarec, hoa_rect)
     print(hcmp.get_similarity())
     print(hcmp.is_subconcept())
-    
+
+    print("\nTesting complexity comparator")
+    hc = list(automata_memory.get_hoa_concepts())
+    for j in range(1, len(hc)):
+        for i in range(0, j):
+            ca, cb = hc[i], hc[j]
+            hoa_a, hoa_b = automata_memory.get_automata(ca)[0], automata_memory.get_automata(cb)[0] 
+            cc = HOAComplexityComparator(hoa_a, hoa_b)
+            cmp = cc.compare()
+            if cmp == 0:
+                print(ca, cb, " identical complexity")
+            elif cmp == -1:
+                print(ca, cb, " more complex is", cb)
+            else:
+                print(ca, cb, " more complex is", ca)
+
+            
