@@ -141,7 +141,7 @@ class HOAComparator:
         b_sidt = [str(x[0]) + "-" + str(x[1]) for x in self.hoa_a.semi_identical_at] 
 
         if a_lc == b_lc and a_idt == b_idt and a_sidt == b_sidt:
-            print("[HOAComparator, warning] identical structure and contraints for two HOAs")
+            #print("[HOAComparator, warning] identical structure and contraints for two HOAs")
             return 1
 
         if a_lc <= b_lc and a_idt <= b_idt and a_sidt <= b_sidt:

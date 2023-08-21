@@ -345,6 +345,9 @@ class AutomataMemory:
             self.inheritance_tree.reconfigure(unsupervised_name, supervised_name)
             self.similarity_net.reconfigure(unsupervised_name, supervised_name)
 
+            for a in automata:
+                a.change_concept_name(supervised_name)
+
         print("[AutomataMemory] unsupervised concept " + unsupervised_name + " reconfigured to " + supervised_name)
         
 

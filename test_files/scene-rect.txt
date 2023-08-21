@@ -29,20 +29,8 @@ Scene for unsupervised learning
     x   x
     xxxxx 
 
-
-
-  xxxxxxxxxxxxxxx  
-  x       
-  x       
-  x       
-  x  
-
-
-  xxxxxxxxx  
-          x        
-          x       
-          x       
-          x
-          x
-          x
-          xxxxxxxxxxxxx 
+xxxxxxxxxxxxxxx
+x
+x
+x
+x

@@ -8,12 +8,13 @@ from HOAutomaton import learn_complex_concept
 from Automaton import learn_simple_concept_from_matrix
 
 class BaseLearner:
-    def __init__(self, automata_memory, mat, verbose=False):
+    def __init__(self, automata_memory, mat, exclude_concepts=[], verbose=False):
         self.automata_memory = automata_memory
         self.mat = mat
         self.concept_recognized = False
         self.complex_concept_recognized, self.base_concept_recognized = False, False
         self.sat_concepts = []
+        self.exclude_concepts = exclude_concepts
         self.verbose = verbose
 
 
@@ -22,7 +23,7 @@ class BaseLearner:
     #
     def check_concept(self):
         self.sat_concepts = self.automata_memory.retrieve_satisfiable_hoa_concepts(self.mat)
-        #self.partially_activated_concepts = self.automata_memory.retrieve_partially_activated_concepts()
+        self.partially_activated_concepts = self.automata_memory.retrieve_partially_activated_concepts()
         
         self.complex_concept_recognized = len(self.sat_concepts) > 0
         if not self.complex_concept_recognized:
@@ -41,7 +42,7 @@ class BaseLearner:
         if unsupervised:
             concept_id = self.automata_memory.get_concept_id_for_unknown(False)
         
-        passed, _ = learn_complex_concept(concept_id, self.mat, self.automata_memory, verbose=self.verbose)
+        passed, _ = learn_complex_concept(concept_id, self.mat, self.automata_memory, exclude_concepts=self.exclude_concepts, verbose=self.verbose)
         if passed:
             #self.concept_similarity_analysis(concept_id)
             return

@@ -67,6 +67,10 @@ class HOA:
         self.HOA_dependencies = []
     
     
+    def change_concept_name(self, new_concept_name):
+        self.concept = new_concept_name
+
+
     def add_node(self, concept, automaton, automaton_type, activation_time):
         node_id = self.num_nodes
         self.num_nodes += 1 
@@ -286,7 +290,7 @@ class HOALearner:
         for concept in complex_concepts:
             # skip excluded concepts
             if concept in self.exclude_concepts:
-                print("Excluding: ", concept)
+                #print("Excluding: ", concept)
                 continue
 
             for hoa in self.automata_memory.get_automata(concept):
@@ -367,7 +371,7 @@ class HOALearner:
                         
                         self.activated_automata.append([concept, automaton, "FSM", visited, t])
                         break
-                         
+
 
     """
     identify dependencies between activated automata (links in HOA graphs)
@@ -755,9 +759,34 @@ class HOAPatRecKernel:
         return 1 if b == 0 else a / b
 
 
-def learn_complex_concept(concept, matrix, automata_memory, verbose=False):
+def learn_HOA(concept, matrix, automata_memory, exclude_concepts=[], verbose=False):
     try:
-        hoal = HOALearner(concept, matrix, automata_memory, verbose=verbose)
+        hoal = HOALearner(concept, matrix, automata_memory, exclude_concepts=exclude_concepts, verbose=verbose)
+        hoa = hoal.learn()
+        if verbose:
+            hoa.print() 
+
+        if hoa.num_nodes == 0:
+            raise Exception("[ERROR, HOALearner] empty hoa due to unknown base concepts")
+
+        #automata_memory.add_automata_to_memory(concept, False, [hoa], matrix)
+        return True, hoa, "OK"
+    except Exception as error:
+        #print("Learning ", concept, "failed, error: ", error)
+        return False, None, "Learning " + concept + " failed: " + str(error)
+
+
+def learn_complex_concept(concept, matrix, automata_memory, exclude_concepts=[], verbose=False):
+    ok, hoa, msg = learn_HOA(concept, matrix, automata_memory, exclude_concepts=exclude_concepts, verbose=verbose)
+    if ok:
+        automata_memory.add_automata_to_memory(concept, False, [hoa], matrix)
+        return True, "OK"
+    
+    return False, msg
+    
+    """
+    try:
+        hoal = HOALearner(concept, matrix, automata_memory, exclude_concepts=exclude_concepts, verbose=verbose)
         hoa = hoal.learn()
         if verbose:
             hoa.print() 
@@ -770,6 +799,8 @@ def learn_complex_concept(concept, matrix, automata_memory, verbose=False):
     except Exception as error:
         #print("Learning ", concept, "failed, error: ", error)
         return False, "Learning " + concept + " failed: " + str(error)
+    """
+
 
 
 
