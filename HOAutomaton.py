@@ -808,7 +808,7 @@ if __name__ == "__main__":
     from Matrix import load_matrix
     from AutomataMemory import AutomataMemory
     from Automaton import learn_simple_concept
-    from InferenceEngine import hoa_inference
+    from InferenceEngine import inference
 
     automata_memory = AutomataMemory()
 
@@ -841,4 +841,4 @@ if __name__ == "__main__":
     print("\n\n------------ AUTOMATA MEMORY")
     automata_memory.info()
 
-    hoa_inference('test_files/scene1.txt', automata_memory)
+    inference('test_files/scene1.txt', automata_memory)
