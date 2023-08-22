@@ -182,7 +182,7 @@ class AutomataMemory:
             self.hoa_similarity_analysis(concept, automata)
 
         concept_type = "base" if base_concept else "complex"
-        print('[AutomataMemory] new ' + concept_type + ' concept ' + concept + ' learnt')
+        print('[AutomataMemory] new ' + concept_type + ' concept ' + concept + ' added to memory')
 
 
     def get_base_concepts(self):
