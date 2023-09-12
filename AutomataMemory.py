@@ -61,6 +61,11 @@ class ConceptDirectedGraph:
             self.G.add_edge(p, new_concept_name)
 
 
+    def remove_node(self, concept):
+        if self.G.has_node(concept):
+            self.G.remove_node(concept)
+
+
 """
 HOA inheritance tree
 """
@@ -128,6 +133,11 @@ class HOASimilarityNet:
             self.G.add_edge(new_concept_name, nei, similarity=w)
 
         self.G.remove_node(old_concept_name)
+
+
+    def remove_node(self, concept):
+        if self.G.has_node(concept):
+            self.G.remove_node(concept)
 
 
 class AutomataMemory:
@@ -357,7 +367,47 @@ class AutomataMemory:
     # automata memory deleting routines
     #
     def remove_concept_from_memory(self, concept_name):
+        if not concept_name in self.automata:
+            print("[warning, remove_concept_from_memory] concept does not exist:", concept_name)
+            return
+
         concepts_to_relearn = self.determine_affected_concepts(concept_name)
+        pats = []
+        for c in concepts_to_relearn:
+            p = self.patterns[c][0]
+            pats.append(p)
+
+        """
+        for i in range(len(concepts_to_relearn)):
+            print(concepts_to_relearn[i])
+            print_matrix(pats[i])
+        """
+
+        concepts_to_remove = []
+        for c in concepts_to_relearn:
+            concepts_to_remove.append(c)
+        concepts_to_remove.append(concept_name)
+
+        #print("Concepts to remove: ", concepts_to_remove)
+        
+        for c in concepts_to_remove:
+            self.delete_concept(c)
+
+
+    def delete_concept(self, c):
+        base_concept = c in self.base_concepts
+        if base_concept:
+            self.base_concepts.remove(c)
+        else:
+            self.hoa_concepts.remove(c)
+
+        del self.automata[c]
+        del self.patterns[c]
+
+        self.inheritance_tree.remove_node(c)
+        self.dependency_net.remove_node(c)
+        self.similarity_net.remove_node(c)
+
 
 
     def determine_affected_concepts(self, concept_name):

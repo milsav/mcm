@@ -64,6 +64,6 @@ if __name__ == "__main__":
     inference('test_files/scene4.txt', automata_memory, show_activation_history=False)
 
     print("\n\nDELETE TEST")
-    deps = automata_memory.determine_affected_concepts('square')
-    print(deps)
+    automata_memory.remove_concept_from_memory('square')
+    automata_memory.info()
     
