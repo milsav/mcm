@@ -12,9 +12,9 @@ from HOAComparator import HOAComparator
 import networkx as nx
 
 """
-Directed graphs for HOA relationships
+Directed graphs for concept relationships
 """
-class HOADirectedGraph:
+class ConceptDirectedGraph:
     def __init__(self):
         self.G = nx.DiGraph()
 
@@ -45,7 +45,7 @@ class HOADirectedGraph:
 
     def reconfigure(self, old_concept_name, new_concept_name):
         if not self.G.has_node(old_concept_name):
-            #print("[HOADirectedGraph, warning] reconfiguration attempt for non-existing node", old_concept_name)
+            #print("[ConceptDirectedGraph, warning] reconfiguration attempt for non-existing node", old_concept_name)
             return
 
         succ = self.G.successors(old_concept_name)
@@ -64,7 +64,7 @@ class HOADirectedGraph:
 """
 HOA inheritance tree
 """
-class HOAInheritanceTree(HOADirectedGraph):
+class HOAInheritanceTree(ConceptDirectedGraph):
     def __init__(self):
         super().__init__()
 
@@ -75,15 +75,15 @@ class HOAInheritanceTree(HOADirectedGraph):
 
 
 """
-HOA dependency network
+Concept dependency network
 """
-class HOADependencyNet(HOADirectedGraph):
+class DependencyNet(ConceptDirectedGraph):
     def __init__(self):
         super().__init__()
 
 
     def info(self):
-        super().info("HOA dependency network")
+        super().info("Concept dependency network")
 
 
 
@@ -143,7 +143,7 @@ class AutomataMemory:
         self.partially_activated_hoa = []
 
         self.inheritance_tree = HOAInheritanceTree()
-        self.dependency_net = HOADependencyNet()
+        self.dependency_net = DependencyNet()
         self.similarity_net = HOASimilarityNet()
 
 
@@ -175,6 +175,8 @@ class AutomataMemory:
             dep_concepts = []
             for a in automata:
                 dep_concepts.extend(a.get_concept_dependencies())
+                dep_concepts.extend(a.get_base_concept_dependencies())
+            
             for d in dep_concepts:
                 self.dependency_net.add_link(concept, d)
 
@@ -349,7 +351,24 @@ class AutomataMemory:
                 a.change_concept_name(supervised_name)
 
         print("[AutomataMemory] unsupervised concept " + unsupervised_name + " reconfigured to " + supervised_name)
+
+
+    #
+    # automata memory deleting routines
+    #
+    def remove_concept_from_memory(self, concept_name):
+        concepts_to_relearn = self.determine_affected_concepts(concept_name)
+
+
+    def determine_affected_concepts(self, concept_name):
+        depg = self.dependency_net.G
         
+        if not concept_name in depg:
+            return []
+        
+        deps = nx.ancestors(depg, concept_name)
+        return list(deps) 
+
 
 """
 if __name__ == "__main__":

@@ -62,4 +62,8 @@ if __name__ == "__main__":
 
     scene_desc, scene_matrix = load_matrix('test_files/scene4.txt')
     inference('test_files/scene4.txt', automata_memory, show_activation_history=False)
+
+    print("\n\nDELETE TEST")
+    deps = automata_memory.determine_affected_concepts('square')
+    print(deps)
     

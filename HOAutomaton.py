@@ -65,6 +65,7 @@ class HOA:
         self.identical_at = []
         self.semi_identical_at = []
         self.HOA_dependencies = []
+        self.base_automata_dependencies = []
     
     
     def change_concept_name(self, new_concept_name):
@@ -80,6 +81,8 @@ class HOA:
 
         if automaton_type == "HOA":
             self.HOA_dependencies.append(concept)
+        else:
+            self.base_automata_dependencies.append(concept)
         
     
     def add_link(self, src_index, dst_index, move_type, constraints):
@@ -182,6 +185,10 @@ class HOA:
 
     def get_concept_dependencies(self):
         return self.HOA_dependencies
+    
+
+    def get_base_concept_dependencies(self):
+        return self.base_automata_dependencies 
 
 
     def total_FSMS(self):
