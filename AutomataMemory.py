@@ -8,6 +8,7 @@ from Matrix import determine_first_nonempty_pixel, parse_field, coverage, print_
 from HOAutomaton import HOAPatRecKernel
 from Automaton import FSMPatRecKernel, PatternGraph
 from HOAComparator import HOAComparator
+from BaseLearning import BaseLearner
 
 import networkx as nx
 
@@ -392,6 +393,18 @@ class AutomataMemory:
         
         for c in concepts_to_remove:
             self.delete_concept(c)
+
+        # relearning
+        for i in range(len(concepts_to_relearn)):
+            concept = concepts_to_relearn[i]
+            pat = pats[i]
+            self.relearn(concept, pat)
+
+
+    def relearn(self,concept, pattern_matrix):
+        print("[Relearning concept]", concept)
+        bl = BaseLearner(self, pattern_matrix)
+        bl.learn_concept(concept, False)
 
 
     def delete_concept(self, c):
