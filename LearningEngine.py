@@ -33,6 +33,7 @@ class LearningEngine:
         ul.identify_and_learn_unknown_concepts()
 
 
+"""
 if __name__ == "__main__":
     from AutomataMemory import AutomataMemory
     from Matrix import load_matrix
@@ -71,4 +72,4 @@ if __name__ == "__main__":
 
     scene_desc, scene_matrix = load_matrix('test_files/scene4.txt')
     inference('test_files/scene4.txt', automata_memory, show_activation_history=False)
-    
+"""  
