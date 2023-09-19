@@ -1,6 +1,6 @@
 # Meta-cognitive machines
 #
-# Demo1: learning & inference
+# Demo 1: learning & inference
 #
 # Authors: {svc, lucy}@dmi.uns.ac.rs
 
