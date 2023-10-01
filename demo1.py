@@ -14,13 +14,11 @@ automata_memory = AutomataMemory()
 le = LearningEngine(automata_memory, verbose=False)
 le.learn('test_files/vertical_line.pat')
 le.learn('test_files/horizontal_line.pat')
-"""
 le.learn('test_files/scene-rect.txt')
 le.learn('test_files/t.pat')
 le.learn('test_files/left_angle.pat')
 le.learn('test_files/right_angle.pat')
 le.learn('test_files/rect.pat')
-"""
 le.learn('test_files/square.pat')
 le.learn('test_files/square_cross.pat')
 le.learn('test_files/square_line.pat')

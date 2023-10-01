@@ -309,8 +309,8 @@ class HOALearner:
                         print("Activation [complex] ", visited, ", HOA: ", concept)
                     
                     # skip concepts that partially covers visisted fileds
-                    #if self.overlap(visited, visited_fields):
-                    #    continue
+                    if self.overlap(visited, visited_fields):
+                        continue
 
                     activated.append([concept, hoa, "HOA", visited, t])
 
@@ -656,7 +656,6 @@ class HOAPatRecKernel:
             return [[x, y]]
         elif move_type.startswith("START_"):
             mt = move_type[6:]
-            print(mt)
             x, y = parse_field(prev_visited_fields[0])
             ind = LT_ARRAY.index(mt)
             x += dx[ind]
