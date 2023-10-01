@@ -270,7 +270,6 @@ class HOALearner:
         self.hoa.process_activation_times()
 
 
-
     """
     BFS-traversal for pattern matrix
     """
@@ -398,15 +397,17 @@ class HOALearner:
     def infere_automata_dependencies(self):
         for j in range(1, len(self.activated_automata)):
             for i in range(j):
-                # print("Infering automata dependencies for ", i, j)
+                #print("Infering automata dependencies for ", i, j)
                 vf_i = self.activated_automata[i][3]
                 vf_j = self.activated_automata[j][3]
+                #print(vf_i)
+                #print(vf_j)
 
                 move_dependency = self.infere_move_dependency(vf_i, vf_j)
-                # print(move_dependency)
+                #print("MOVE DEPS:", move_dependency)
 
                 link_constraints = self.infere_link_constraints(vf_i, vf_j)
-                # print(link_constraints)
+                #print("LINK CONS:", link_constraints)
 
                 if move_dependency != None or link_constraints != []:
                     if move_dependency == None:
@@ -433,6 +434,11 @@ class HOALearner:
         if nei:
             return move
         
+        # automata i and j starts at adjacent positions
+        nei, move = neigh(j_start, i_start)
+        if nei:
+            return "START_" + move
+
         # automaton j starts at/around some middle field marked by automata i
         incidences = []
         for k in range(1, len(vf_i) - 1):
@@ -533,7 +539,7 @@ class HOAPatRecKernel:
         rec, t, visited = self.apply_automaton(start_node, self.x, self.y)
 
         if rec:
-            # print("First automaton succesfully activated", self.x, self.y)
+            #print("First automaton succesfully activated", self.x, self.y)
             self.activation_time[0] = t
             self.visited_fields[0] = visited
             self.all_visisted_fields.extend(visited)
@@ -647,6 +653,14 @@ class HOAPatRecKernel:
     def determine_starting_position(self, prev_visited_fields, move_type, automaton_node):
         if move_type == "START":
             x, y = parse_field(prev_visited_fields[0])
+            return [[x, y]]
+        elif move_type.startswith("START_"):
+            mt = move_type[6:]
+            print(mt)
+            x, y = parse_field(prev_visited_fields[0])
+            ind = LT_ARRAY.index(mt)
+            x += dx[ind]
+            y += dy[ind]
             return [[x, y]]
         elif move_type in LT_ARRAY:
             x, y = parse_field(prev_visited_fields[-1])

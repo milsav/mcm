@@ -60,4 +60,29 @@ x   x           x      x
     x           x      x
     x           x      x
     xxxxxxxxxxxxxxxxxxxx
- 
+
+
+
+xxxxxxxxxx
+x        x
+x        x
+x        x
+x    xxxxxxxxxx
+x        x
+x        x
+x        x
+x        x
+xxxxxxxxxx
+
+
+
+xxxxxxxxxx
+x        x
+x        x
+x        x
+x   xxxxxxxxxxx
+x        x
+x        x
+x        x
+x        x
+xxxxxxxxxx
