@@ -16,6 +16,7 @@ le.learn('test_files/vertical_line.pat')
 le.learn('test_files/horizontal_line.pat')
 le.learn('test_files/square.pat')
 le.learn('test_files/square_cross.pat')
+le.learn('test_files/square_line.pat')
 
 print("Learning finished")
 
