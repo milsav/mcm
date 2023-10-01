@@ -309,6 +309,10 @@ class HOALearner:
                     if self.verbose:
                         print("Activation [complex] ", visited, ", HOA: ", concept)
                     
+                    # skip concepts that partially covers visisted fileds
+                    #if self.overlap(visited, visited_fields):
+                    #    continue
+
                     activated.append([concept, hoa, "HOA", visited, t])
 
 
@@ -350,6 +354,14 @@ class HOALearner:
 
         return False 
     
+
+    def overlap(self, set1, set2):
+        for s in set1:
+            if s in set2:
+                return True
+            
+        return False
+
 
     """
     identify base concepts that can be recognized by existing FSMs

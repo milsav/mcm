@@ -424,7 +424,7 @@ class FSMPatRecKernel:
 
     def applyRec(self, state, x, y):
         while (True):
-            # print(state.name, x, y)
+            #print(state.name, x, y)
             self.active_time += 1
             self.visited.append(str(x) + "-" + str(y))
             self.activated_states.add(state.name)
@@ -432,11 +432,14 @@ class FSMPatRecKernel:
             num_trans = len(state.transitions)
             feasible_trans, empty_present, selfloop_present = self.determine_feasible_transitions(x, y, state)
             num_feasible_trans = len(feasible_trans)
+            #print(num_feasible_trans)
 
             if num_feasible_trans == 0:
                 if empty_present:
                     if num_trans == 1 or (num_trans == 2 and selfloop_present):
                         return True
+                    else:
+                        return False
                 else:
                     return self.pattern_recognized()
             else:
