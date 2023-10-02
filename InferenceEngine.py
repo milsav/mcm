@@ -4,15 +4,32 @@
 #
 # Authors: {svc, lucy}@dmi.uns.ac.rs
 
-from Matrix import load_matrix, print_matrix, determine_first_nonempty_pixel, coverage, parse_field
+from Matrix import load_matrix, print_matrix, determine_first_nonempty_pixel
+from Matrix import num_pixels, parse_field, coverage
 from SceneAnalyzer import IdentifyObjects
 from HOAutomaton import HOAPatRecKernel
 from Automaton import FSMPatRecKernel, PatternGraph 
+
+
+def similarity_analysis(ac_scores):
+    sim_scores = []
+    for ac in ac_scores:
+        concept = ac[0]
+        activation = ac[1]
+        coverage = ac[2]
+        sim_score = activation * coverage
+        sim_scores.append((concept, sim_score))
+
+    sim_scores.sort(key=lambda a: a[1], reverse=True)
+    return sim_scores[0]
+
 
 def hoa_inference(mat, automata_memory, show_activation_history):
     recognized_concepts = []
     ac_scores = []
     
+    num_pixs = num_pixels(mat)
+
     for hoa_concept in automata_memory.get_hoa_concepts():
         hoas = automata_memory.get_automata(hoa_concept)
         for hoa in hoas:
@@ -20,6 +37,7 @@ def hoa_inference(mat, automata_memory, show_activation_history):
             #print("Trying", hoa_concept, "at", pos)
             prk = HOAPatRecKernel(hoa, mat, pos[0], pos[1])
             rec, _, visited_fields = prk.apply()
+            cov_factor = len(set(visited_fields)) / num_pixs
             ac_score = prk.activation_score()
 
             if show_activation_history:
@@ -30,18 +48,21 @@ def hoa_inference(mat, automata_memory, show_activation_history):
                 recognized_concepts.append(hoa_concept)
             
             if ac_score > 0:
-                ac_scores.append((hoa_concept, ac_score))
+                #print("VF: ", visited_fields, "AC = ", ac_score, "concept", hoa_concept)
+                ac_scores.append((hoa_concept, ac_score, cov_factor))
+
+    if len(ac_scores) > 0:
+        print("--- HOA activation scores")
+        for acs in ac_scores:
+            print(acs[0], round(acs[1], 3), "coverage factor: ", round(acs[2], 3))
 
     print("--- HOA inference results")
     if len(recognized_concepts) > 0:
         print("Recognized concepts:", ",".join(recognized_concepts))
     else:
         print("Nothing recoginized by HOAs")
-    
-    if len(ac_scores) > 0:
-        print("Activation scores:")
-        for acs in ac_scores:
-            print(acs[0], round(acs[1], 3))
+        sim_res = similarity_analysis(ac_scores)
+        print("The most similar concept: ", sim_res[0], "similarity score", sim_res[1])
 
 
 def fsm_inference(mat, automata_memory):

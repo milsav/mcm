@@ -134,7 +134,7 @@ def determine_first_nonempty_pixel(mat):
 
 
 """
-check whether fields set covers 
+check whether fields set covers matrix mat 
 """
 def coverage(fields, mat):
     dimx, dimy = len(mat), len(mat[0])
@@ -146,3 +146,18 @@ def coverage(fields, mat):
                 return False
                 
     return True
+
+
+"""
+returns the number of non-empty pixels
+"""
+def num_pixels(mat):
+    dimx, dimy = len(mat), len(mat[0])
+    total = 0
+    for i in range(dimx):
+        for j in range(dimy): 
+            f = mat[i][j]
+            if f != ' ':
+                total += 1
+                
+    return total

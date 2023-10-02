@@ -550,10 +550,9 @@ class HOAPatRecKernel:
             if bfs_succesfull:
                 return True, len(self.all_visisted_fields), self.all_visisted_fields
             else:
-                return False, 0, None
+                return False, len(self.all_visisted_fields), self.all_visisted_fields
         else:
-            return False, 0, None
-        
+            return False, t, visited        
     
     def bfs(self):
         graph = self.hoa.G
