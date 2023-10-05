@@ -66,7 +66,7 @@ def hoa_inference(mat, automata_memory, show_activation_history):
         print("Nothing recoginized by HOAs")
         sim_res = similarity_analysis(ac_scores)
         if sim_res != None:
-            print("The most similar concept: ", sim_res[0], "similarity score", sim_res[1])
+            print("The most similar concept: ", sim_res[0], "similarity score", round(sim_res[1], 4))
 
 
 def fsm_inference(mat, automata_memory):
