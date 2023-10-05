@@ -12,6 +12,9 @@ from Automaton import FSMPatRecKernel, PatternGraph
 
 
 def similarity_analysis(ac_scores):
+    if ac_scores == None or len(ac_scores) == 0:
+        return None
+    
     sim_scores = []
     for ac in ac_scores:
         concept = ac[0]
@@ -62,7 +65,8 @@ def hoa_inference(mat, automata_memory, show_activation_history):
     else:
         print("Nothing recoginized by HOAs")
         sim_res = similarity_analysis(ac_scores)
-        print("The most similar concept: ", sim_res[0], "similarity score", sim_res[1])
+        if sim_res != None:
+            print("The most similar concept: ", sim_res[0], "similarity score", sim_res[1])
 
 
 def fsm_inference(mat, automata_memory):
