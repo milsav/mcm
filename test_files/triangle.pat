@@ -5,4 +5,6 @@ triangle
         x   x 
        x     x
       x       x
-     xxxxxxxxxxx  
+     x         x
+    x           x
+   xxxxxxxxxxxxxxx  

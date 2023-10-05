@@ -6,6 +6,7 @@
 
 from HOAutomaton import learn_complex_concept
 from Automaton import learn_simple_concept_from_matrix
+from AdvancedLearning import AdvancedLearner
 
 class BaseLearner:
     def __init__(self, automata_memory, mat, exclude_concepts=[], verbose=False):
@@ -54,6 +55,11 @@ class BaseLearner:
                 concept_id = self.automata_memory.get_concept_id_for_unknown(True)
             
             self.automata_memory.add_automata_to_memory(concept_id, True, fsms, self.mat)
+            return
+        
+        print("Unable to learn concept", concept_id, "starting advanced learning")
+        adv_learner = AdvancedLearner(concept_id, self.mat, self.automata_memory)
+        adv_learner.learn()
                         
 
 
