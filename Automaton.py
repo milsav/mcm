@@ -232,6 +232,10 @@ class FSM:
                 s.print()
 
 
+    def set_id(self, id):
+        self.fsm_id = id
+
+
 class FSMLearner:
     def __init__(self, pattern_graph, start_node, verbose=False):
         self.pattern_graph = pattern_graph

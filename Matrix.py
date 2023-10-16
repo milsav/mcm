@@ -161,3 +161,18 @@ def num_pixels(mat):
                 total += 1
                 
     return total
+
+
+"""
+converts matrix to string
+"""
+def mat_to_str(mat):
+    dimx, dimy = len(mat), len(mat[0])
+    s = ""
+    for i in range(dimx):
+        for j in range(dimy): 
+            f = mat[i][j]
+            s += f
+        s += "\n"
+                
+    return s

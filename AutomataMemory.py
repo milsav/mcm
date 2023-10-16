@@ -5,6 +5,7 @@
 # Authors: {svc, lucy}@dmi.uns.ac.rs
 
 from Matrix import determine_first_nonempty_pixel, parse_field, coverage, print_matrix
+from Matrix import mat_to_str
 from HOAutomaton import HOAPatRecKernel
 from Automaton import FSMPatRecKernel, PatternGraph
 from HOAComparator import HOAComparator
@@ -431,6 +432,116 @@ class AutomataMemory:
         
         deps = nx.ancestors(depg, concept_name)
         return list(deps) 
+    
+
+    #
+    # convert automata memory to networkx digraph 
+    #
+
+    def convert_to_big_digraph(self):
+        big_G = nx.DiGraph()
+
+        for concept in self.automata:
+            is_fsm = concept in self.base_concepts
+            autos = self.automata[concept]
+            pattern_matrix = mat_to_str(self.patterns[concept][0])
+            #print(concept, is_fsm)
+            #print(pattern)
+            
+            if is_fsm:
+                cnt = 0
+                for fsm in autos:
+                    cnt += 1
+                    fsm_id = "FSM-" + concept + "-" + str(cnt)
+                    #print("--->", fsm_id, type(fsm))
+                    fsm.set_id(fsm_id)
+                    activating_symbol = fsm.activating_symbol
+                    
+                    big_G.add_node(fsm_id, node_type="FSM", pattern=pattern_matrix, activating_symbol=str(activating_symbol))
+
+                    # add nodes
+                    for i in range(len(fsm.states)):
+                        state_id = fsm_id + "-" + fsm.states[i].name
+                        big_G.add_node(state_id, node_type="FSM_STATE")
+                        if i == 0:
+                            big_G.add_edge(fsm_id, state_id, link_type="IMPLEMENTATION")
+
+                    # add links
+                    for i in range(len(fsm.states)):
+                        state = fsm.states[i]
+                        state_id = fsm_id + "-" + state.name
+                        for t in state.transitions:
+                            fsm_symbol = t[0]
+                            next_state = fsm_id + "-" + t[1].name
+                            #print(fsm_symbol, next_state)
+                            big_G.add_edge(state_id, next_state, link_type="FSM_TRANSITION", symbol=str(fsm_symbol))
+
+            else:
+                hoa = autos[0]
+                hoa_G = hoa.G
+                hoa_nodes = list(hoa_G.nodes())
+                hoa_links = list(hoa_G.edges())
+                #print("Concept", concept)
+                hoa_id = "HOA-" + concept
+
+                big_G.add_node(hoa_id, node_type="HOA", pattern=pattern_matrix)
+
+                prefix = hoa_id + "-" 
+                node_id_map = dict()
+
+                for i in range(len(hoa_nodes)):
+                    n = hoa_nodes[i]
+                    n_concept_id = ""
+                    if n.automaton_type == "FSM":
+                        n_concept_id = n.automaton.fsm_id
+                    else:
+                        n_concept_id = "HOA-" + n.concept
+
+                    activation_time = n.activation_time
+                    
+                    node_id = prefix + str(n.node_id) + "-" + n_concept_id
+                    big_G.add_node(node_id, node_type="HOA_STATE", activation_time=str(activation_time))
+                    node_id_map[i] = node_id
+
+                    if i == 0:
+                        big_G.add_edge(hoa_id, node_id, link_type="IMPLEMENTATION")
+
+                    big_G.add_edge(hoa_id, n_concept_id, link_type="DEPENDENCY")
+
+                for i in range(len(hoa_links)):
+                    link = hoa_links[i]
+                    src, dst = link
+                    src_id = node_id_map[src.get_id()]
+                    dst_id = node_id_map[dst.get_id()]
+                    move_type = hoa_G.edges[link]["move_type"]
+                    constraints = hoa_G.edges[link]["constraints"]
+                    big_G.add_edge(src_id, dst_id, link_type="HOA_TRANSITION", move_type=str(move_type), constraints=str(constraints))
+
+
+        """
+        self.inheritance_tree = HOAInheritanceTree()
+        self.dependency_net = DependencyNet()
+        self.similarity_net = HOASimilarityNet()
+        """
+        inheritance_edges = self.inheritance_tree.G.edges()
+        for ie in inheritance_edges:
+            src, dst = ie
+            big_G.add_edge("HOA-" + src, "HOA-" + dst, link_type="EXTENSION")
+
+        dep_edges = self.dependency_net.G.edges()
+        for de in dep_edges:
+            src, dst = de
+            #print(src, dst)
+
+        sim_edges = self.similarity_net.G.edges()
+        for se in sim_edges:
+            src, dst = se
+            sim = self.similarity_net.G.edges[se]["similarity"]
+            src_id, dst_id = "HOA-" + src, "HOA-" + dst
+            big_G.add_edge(src_id, dst_id, link_type="SIMILARITY", similarity=str(sim))
+
+
+        return big_G
 
 
 """
