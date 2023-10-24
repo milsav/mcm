@@ -247,6 +247,9 @@ class AutomataMemory:
         self.partially_activated_hoa.clear()
         
         first_pixel = determine_first_nonempty_pixel(matrix)
+        if first_pixel == None:
+            return []
+
         for hoa_concept in self.hoa_concepts:
             hoas = self.automata[hoa_concept]
             for hoa in hoas:

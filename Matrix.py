@@ -130,6 +130,8 @@ def determine_first_nonempty_pixel(mat):
         for j in range(dimy):
             if mat[i][j] != ' ':
                 return i, j
+            
+    return None
     
 
 
