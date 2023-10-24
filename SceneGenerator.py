@@ -74,15 +74,13 @@ class SceneGenerator:
 if __name__ == "__main__":
     sg = SceneGenerator(50, 50)
     sg.draw_circle(15, 15, 5)
-    sg.save('test_files/circle')
+    #sg.save('test_files/circle')
     sg.draw_circle(30, 30, 8)
-    sg.save('test_files/circle_scene')
+    #sg.save('test_files/circle_scene')
     sg.print()
 
-    """
     sg = SceneGenerator(50, 50)
     sg.draw_polygon(20, 20, 15, 6)
     sg.draw_square(1, 1, 5)
     sg.draw_rectangle(40, 40, 5, 8)
     sg.print()
-    """

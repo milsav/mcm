@@ -23,5 +23,4 @@ automata_memory.info()
 
 
 print("\n\nRECOGNITION TEST")
-scene_desc, scene_matrix = load_matrix('test_files/scene4.txt')
 inference('test_files/scene4.txt', automata_memory, show_activation_history=False)
