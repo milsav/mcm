@@ -5,21 +5,23 @@ from Database import Database
 import networkx as nx
 import nxneo4j as nx4
 
-automata_memory = AutomataMemory()
+from InferenceEngine import inference
 
-le = LearningEngine(automata_memory, verbose=False)
-le.learn('test_files/vertical_line.pat')
-le.learn('test_files/horizontal_line.pat')
-le.learn('test_files/square.pat')
-le.learn('test_files/rect.pat')
-le.learn('test_files/square_cross.pat')
+#automata_memory = AutomataMemory()
 
-print("Learning finished")
+#le = LearningEngine(automata_memory, verbose=False)
+#le.learn('test_files/vertical_line.pat')
+#le.learn('test_files/horizontal_line.pat')
+#le.learn('test_files/square.pat')
+#le.learn('test_files/rect.pat')
+#le.learn('test_files/square_cross.pat')
 
-print("\n\n\nAutomata memory")
-automata_memory.info()
+#print("Learning finished")
 
-print("\n\nConverting to big digraph")
+#print("\n\n\nAutomata memory")
+#automata_memory.info()
+
+#print("\n\nConverting to big digraph")
 #G = automata_memory.convert_to_big_digraph()
 
 db = Database("neo4j", "neo4j")
@@ -30,4 +32,7 @@ print("\n\n\nNodes:\n")
 print(list(dbG.nodes(data=True)))
 print("\n\n\nEdges:\n")
 print(list(dbG.edges(data=True)))
-print(dbG)
+print("\n\n\n")
+memory = db.restore_automata_memory()
+print("\n\nRECOGNITION TEST")
+inference('test_files/scene4.txt', memory, show_activation_history=False)
