@@ -13,6 +13,7 @@ import networkx as nx
 import Matrix
 import AutomataMemory
 from Automaton import FSM, FSMSymbol, EMPTY_FSM_SYMBOL
+import HOAutomaton
 
 class Database:
     def __init__(self, username, password):
@@ -93,10 +94,139 @@ class Database:
             automata = [fsm[0] for fsm in fsm_map[concept][1]]
             memory.add_automata_to_memory(concept, True, automata, pattern_matrix)
 
-
+        print(fsm_map)
+        
         # reconstructing HOAs
+        
+        all_hoas = dict()
+        
+        #first get HOAs with no other HOAs as dependencies
+        db_hoas = self.driver.session().run("match (n)-[r]->(m) where n.node_type='HOA' and m.node_type='HOA' and r.link_type <> 'DEPENDENCY' return distinct n;")
+        for db_hoa in db_hoas.data():
+            concept = db_hoa['n']['id'].split("-")[1]
+            pattern = self.str_to_matrix(db_hoa['n']['pattern'])
+            hoa = HOAutomaton.HOA(concept)
+            
+            #get hoa states
+            query = "match (n)-[r]->(m) where n.id contains 'HOA-"+concept+"-' and m.id contains 'HOA-"+concept+"-' and m.node_type='HOA_STATE' and n.node_type='HOA_STATE' return n,r,m;"
+            hoa_states = list(self.driver.session().run(query))
+            states_map = dict()
+            relations_map = list()
+            for state in hoa_states:
+                n = dict(dict(state)['n'])
+                n_index = n['id'].split('-')[2]
+                n_fsm_id = n['id'].split('-')[-2]
+                n_fsm_index = n['id'].split('-')[-1]
+                n_automaton = None
+                for auts in fsm_map[n_fsm_id][1]:
+                    if auts[1] == n_fsm_index:
+                        n_automaton = auts[0]
+                n_activation_time = int(n['activation_time'])
+                states_map[n_index] = {'concept':n_fsm_id, 'automaton':n_automaton, 'automaton_type':'FSM', 'activation_time':n_activation_time}
+                
+                r = dict(dict(state)['r'])
+                nodes = list(dict(state)['r'].nodes)
+                n1_index = dict(nodes[0])['id'].split('-')[2]
+                n2_index = dict(nodes[1])['id'].split('-')[2]
+                move_type = r['move_type']
+                constraints = r['constraints'][2:-2].split(',')
+                relations_map.append((n1_index, n2_index, move_type, constraints))
+
+                m = dict(dict(state)['m'])
+                m_index = m['id'].split('-')[2]
+                if m_index not in states_map.keys():
+                    m_fsm_id = m['id'].split('-')[-2]
+                    m_fsm_index = m['id'].split('-')[-1]
+                    m_automaton = None
+                    for auts in fsm_map[m_fsm_id][1]:
+                        if auts[1] == m_fsm_index:
+                            m_automaton = auts[0]
+                    m_activation_time = int(m['activation_time'])
+                    states_map[m_index] = {'concept':m_fsm_id, 'automaton':m_automaton, 'automaton_type':'FSM', 'activation_time':m_activation_time}
+
+            
+            for key in states_map:
+                state = states_map[key]
+                hoa.add_node(state['concept'], state['automaton'], state['automaton_type'], state['activation_time'])
+            
+            for rel in relations_map:
+                hoa.add_link(int(rel[0]) - 1, int(rel[1]) - 1, rel[2], rel[3])
+                
+            all_hoas[concept] = (hoa, pattern)
+            memory.add_automata_to_memory(concept, False, [hoa], pattern)
+                            
+            
+        #get the rest of HOAs
         db_hoas = self.driver.session().run("match (n) where n.node_type='HOA' return n;")
-        print(db_hoas.data())
+        for db_hoa in db_hoas.data():
+            concept = db_hoa['n']['id'].split("-")[1]
+            if concept not in all_hoas.keys():
+                pattern = self.str_to_matrix(db_hoa['n']['pattern'])
+                hoa = HOAutomaton.HOA(concept)
+            
+                #get hoa states
+                query = "match (n)-[r]->(m) where n.id contains 'HOA-"+concept+"-' and m.id contains 'HOA-"+concept+"-' and m.node_type='HOA_STATE' and n.node_type='HOA_STATE' return n,r,m;"
+                hoa_states = list(self.driver.session().run(query))
+                states_map = dict()
+                relations_map = list()
+                for state in hoa_states:
+                    n = dict(dict(state)['n'])
+                    if('FSM' in n['id']):
+                        n_index = n['id'].split('-')[2]
+                        n_fsm_id = n['id'].split('-')[-2]
+                        n_fsm_index = n['id'].split('-')[-1]
+                        n_automaton = None
+                        for auts in fsm_map[n_fsm_id][1]:
+                            if auts[1] == n_fsm_index:
+                                n_automaton = auts[0]
+                        n_activation_time = int(n['activation_time'])
+                        states_map[n_index] = {'concept':n_fsm_id, 'automaton':n_automaton, 'automaton_type':'FSM', 'activation_time':n_activation_time}
+                    else:
+                        n_index = n['id'].split('-')[2]
+                        n_hoa_id = n['id'].split('-')[-1]
+                        n_automaton = all_hoas[n_hoa_id][0]
+                        n_activation_time = int(n['activation_time'])
+                        states_map[n_index] = {'concept':n_hoa_id, 'automaton':n_automaton, 'automaton_type':'HOA', 'activation_time':n_activation_time}
+                    
+                    r = dict(dict(state)['r'])
+                    nodes = list(dict(state)['r'].nodes)
+                    n1_index = dict(nodes[0])['id'].split('-')[2]
+                    n2_index = dict(nodes[1])['id'].split('-')[2]
+                    move_type = r['move_type']
+                    constraints = r['constraints'][2:-2].split(',')
+                    relations_map.append((n1_index, n2_index, move_type, constraints))
+
+
+                    m = dict(dict(state)['m'])
+                    if 'FSM' in m['id']:
+                        m_index = m['id'].split('-')[2]
+                        if m_index not in states_map.keys():
+                            m_fsm_id = m['id'].split('-')[-2]
+                            m_fsm_index = m['id'].split('-')[-1]
+                            m_automaton = None
+                            for auts in fsm_map[m_fsm_id][1]:
+                                if auts[1] == m_fsm_index:
+                                    m_automaton = auts[0]
+                            m_activation_time = int(m['activation_time'])
+                            states_map[m_index] = {'concept':m_fsm_id, 'automaton':m_automaton, 'automaton_type':'FSM', 'activation_time':m_activation_time}
+                    else:
+                        m_index = m['id'].split('-')[2]
+                        m_hoa_id = m['id'].split('-')[-1]
+                        m_automaton = all_hoas[m_hoa_id][0]
+                        m_activation_time = int(m['activation_time'])
+                        states_map[m_index] = {'concept':m_hoa_id, 'automaton':m_automaton, 'automaton_type':'HOA', 'activation_time':m_activation_time}
+                    
+                    for key in states_map:
+                        state = states_map[key]
+                        hoa.add_node(state['concept'], state['automaton'], state['automaton_type'], state['activation_time'])
+            
+                    for rel in relations_map:
+                        hoa.add_link(int(rel[0]) - 1, int(rel[1]) - 1, rel[2], rel[3])
+                
+                    all_hoas[concept] = (hoa, pattern)
+                    memory.add_automata_to_memory(concept, False, [hoa], pattern)
+
+        self.driver.close()
 
         return memory
 
