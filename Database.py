@@ -19,6 +19,10 @@ class Database:
     def __init__(self, username, password):
         self.driver = GraphDatabase.driver("bolt://localhost:7687", auth=(username, password))
 
+
+    def closeDB(self):
+        self.driver.close()
+
     def persist(self, digraph):
         db_graph = nx4.DiGraph(self.driver)
         #copy nodes
@@ -94,22 +98,73 @@ class Database:
             automata = [fsm[0] for fsm in fsm_map[concept][1]]
             memory.add_automata_to_memory(concept, True, automata, pattern_matrix)
 
-        print(fsm_map)
-        
+        """
+        for d in fsm_map:
+            print(d)
+            print(fsm_map[d][1])
+            print()
+        """
         # reconstructing HOAs
         
         all_hoas = dict()
         
         #first get HOAs with no other HOAs as dependencies
-        db_hoas = self.driver.session().run("match (n)-[r]->(m) where n.node_type='HOA' and m.node_type='HOA' and r.link_type <> 'DEPENDENCY' return distinct n;")
+        db_hoas = self.driver.session().run("match (n)-[r]->(m) where n.node_type='HOA' and r.link_type <> 'DEPENDENCY' return distinct n;")
         for db_hoa in db_hoas.data():
             concept = db_hoa['n']['id'].split("-")[1]
+            
             pattern = self.str_to_matrix(db_hoa['n']['pattern'])
             hoa = HOAutomaton.HOA(concept)
             
             #get hoa states
             query = "match (n)-[r]->(m) where n.id contains 'HOA-"+concept+"-' and m.id contains 'HOA-"+concept+"-' and m.node_type='HOA_STATE' and n.node_type='HOA_STATE' return n,r,m;"
             hoa_states = list(self.driver.session().run(query))
+            
+            hnodes = [None] * len(hoa_states)
+            hlinks = []
+            
+            for state in hoa_states:
+                src = dict(state.get("n"))
+                link_src_dst = dict(state.get("r"))
+                dst = dict(state.get("m"))
+                
+                src_id, dst_id = src['id'], dst['id']
+                src_at, dst_at = int(src['activation_time']), int(dst['activation_time'])
+                move_type = link_src_dst['move_type']
+                constraints = eval(link_src_dst['constraints'])
+                
+                src_toks, dst_toks = src_id.split("-"), dst_id.split("-")
+                src_concept, src_index, src_state_index = src_toks[-2], src_toks[-1], int(src_toks[2])
+                dst_concept, dst_index, dst_state_index = dst_toks[-2], dst_toks[-1], int(dst_toks[2])
+                
+                if hnodes[src_state_index] == None:
+                    hnodes[src_state_index] = (src_concept, src_index, src_at)
+                    
+                if hnodes[dst_state_index] == None:
+                    hnodes[dst_state_index] = (dst_concept, dst_index, dst_at)
+                    
+                hlinks.append((src_state_index, dst_state_index, move_type, constraints))
+            
+            for i in range(len(hnodes)):
+                fsm_concept, aindex, at = hnodes[i][0], hnodes[i][1], hnodes[i][2]
+                candidates = fsm_map[fsm_concept]
+                automaton = None
+                for c in candidates[1]:
+                    if c[1] == aindex:
+                        automaton = c[0]
+                
+                hoa.add_node(fsm_concept, automaton, "FSM", at)
+                
+            hoa.process_activation_times()
+                
+            for hl in hlinks:
+                srci, dsti, mt, cons = hl[0], hl[1], hl[2], hl[3]
+                hoa.add_link(srci, dsti, mt, cons)
+                
+            all_hoas[concept] = (hoa, pattern)
+            memory.add_automata_to_memory(concept, False, [hoa], pattern)
+            
+            """
             states_map = dict()
             relations_map = list()
             for state in hoa_states:
@@ -154,9 +209,11 @@ class Database:
                 
             all_hoas[concept] = (hoa, pattern)
             memory.add_automata_to_memory(concept, False, [hoa], pattern)
+            """
                             
             
         #get the rest of HOAs
+        """
         db_hoas = self.driver.session().run("match (n) where n.node_type='HOA' return n;")
         for db_hoa in db_hoas.data():
             concept = db_hoa['n']['id'].split("-")[1]
@@ -225,7 +282,7 @@ class Database:
                 
                     all_hoas[concept] = (hoa, pattern)
                     memory.add_automata_to_memory(concept, False, [hoa], pattern)
-
+        """
         self.driver.close()
 
         return memory
